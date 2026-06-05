@@ -1,0 +1,932 @@
+{
+  "themes": [
+    {
+      "en": {
+        "name": "Ocean",
+        "description": "A clean, modern ocean-inspired UI with cool blues and soft contrast for a professional, calm digital experience."
+      },
+      "gr": {
+        "name": "Ωκεανός",
+        "description": "Ένας καθαρός και μοντέρνος σχεδιασμός εμπνευσμένος από τη θάλασσα που συνδυάζει ήπιες μπλε αποχρώσεις και απαλή αντίθεση για μια ήρεμη και ισορροπημένη εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#ffffff",
+        "secondaryBackground": "#f0f6fb",
+        "contentText": "#384858",
+        "headingText": "#0f1d2e",
+        "mutedText": "#6e7e8c",
+        "borderColor": "#dce4ec",
+        "accentColor": "#2e7dba",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#f0b429"
+      },
+      "highlightColors": {
+        "primaryBackground": "#0f1d2e",
+        "secondaryBackground": "#081420",
+        "contentText": "#b8c8d8",
+        "headingText": "#ffffff",
+        "mutedText": "#7a8e9e",
+        "borderColor": "#253545",
+        "accentColor": "#a1bed3",
+        "accentTextColor": "#0f1d2e",
+        "ratingStarColor": "#f0b429"
+      }
+    },
+    {
+      "en": {
+        "name": "Wild Orchid",
+        "description": "A soft, elegant UI theme with warm neutrals and a bold rose accent, designed for modern editorial and premium interfaces."
+      },
+      "gr": {
+        "name": "Άγρια Ορχιδέα",
+        "description": "Ένας απαλός και κομψός σχεδιασμός με ζεστές ουδέτερες αποχρώσεις και έντονη ροζ πινελιά, ιδανικός για όμορφα και προσεγμένα περιβάλλοντα με έμφαση στην αισθητική."
+      },
+      "standardColors": {
+        "primaryBackground": "#ffffff",
+        "secondaryBackground": "#f1f5f9",
+        "contentText": "#1f2937",
+        "headingText": "#0f172a",
+        "mutedText": "#6b7280",
+        "borderColor": "#e2e8f0",
+        "accentColor": "#DE1877",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#fbbf24"
+      },
+      "highlightColors": {
+        "primaryBackground": "#233c54",
+        "secondaryBackground": "#152a3e",
+        "contentText": "#eaf3fc",
+        "headingText": "#ffffff",
+        "mutedText": "#64748b",
+        "borderColor": "#526884",
+        "accentColor": "#DE1877",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#fbbf24"
+      }
+    },
+    {
+      "en": {
+        "name": "Earthy Herbs",
+        "description": "An earthy, nature-inspired UI theme combining warm neutrals with sage greens for a balanced light and dark experience."
+      },
+      "gr": {
+        "name": "Στον Κόσμο των Βοτάνων",
+        "description": "Ένας γήινος συνδυασμός εμπνευσμένος από τη φύση που ενώνει ζεστές ουδέτερες αποχρώσεις με πράσινους τόνους φασκόμηλου για μια ισορροπημένη εμπειρία φωτεινών και σκοτεινών επιλογών."
+      },
+      "standardColors": {
+        "primaryBackground": "#ffffff",
+        "secondaryBackground": "#f4f1ec",
+        "contentText": "#3d3830",
+        "headingText": "#1a1a1a",
+        "mutedText": "#7a7368",
+        "borderColor": "#e4dfd8",
+        "accentColor": "#2d6a4f",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#e8a435"
+      },
+      "highlightColors": {
+        "primaryBackground": "#1a1a1a",
+        "secondaryBackground": "#111111",
+        "contentText": "#d4cfc8",
+        "headingText": "#ffffff",
+        "mutedText": "#8a847a",
+        "borderColor": "#3a3a3a",
+        "accentColor": "#5eab8b",
+        "accentTextColor": "#1a1a1a",
+        "ratingStarColor": "#e8a435"
+      }
+    },
+    {
+      "en": {
+        "name": "Electric Dreams",
+        "description": "A bold, modern UI theme with deep indigo tones and sharp blue accents for a futuristic, high-energy interface."
+      },
+      "gr": {
+        "name": "Ηλεκτρικά Όνειρα",
+        "description": "Ένας τολμηρός και μοντέρνος σχεδιασμός με βαθιές αποχρώσεις ινδικού και έντονες μπλε πινελιές για μια δυναμική και σύγχρονη εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#ffffff",
+        "secondaryBackground": "#f4f5f9",
+        "contentText": "#2e3249",
+        "headingText": "#0e1230",
+        "mutedText": "#6c7089",
+        "borderColor": "#e4e6ef",
+        "accentColor": "#2d3ed6",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#f59e0b"
+      },
+      "highlightColors": {
+        "primaryBackground": "#0e1230",
+        "secondaryBackground": "#08092a",
+        "contentText": "#c2c5d6",
+        "headingText": "#ffffff",
+        "mutedText": "#7e819a",
+        "borderColor": "#242849",
+        "accentColor": "#7f8bff",
+        "accentTextColor": "#0e1230",
+        "ratingStarColor": "#f59e0b"
+      }
+    },
+    {
+      "en": {
+        "name": "Steep Coast",
+        "description": "A calm, modern UI theme inspired by coastal tones and natural stone colors, combining soft light surfaces with deep dark contrast for a balanced experience."
+      },
+      "gr": {
+        "name": "Απότομη Ακτή",
+        "description": "Ένας ήρεμος και μοντέρνος σχεδιασμός εμπνευσμένος από παράκτιες αποχρώσεις και φυσικές πέτρες που συνδυάζει ανοιχτές επιφάνειες με βαθιές σκούρες αντιθέσεις για ισορροπημένη εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#f7f6f3",
+        "secondaryBackground": "#edeae4",
+        "contentText": "#3c4448",
+        "headingText": "#1a2024",
+        "mutedText": "#6e777c",
+        "borderColor": "#d5d1ca",
+        "accentColor": "#1d5e6e",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#d4960a"
+      },
+      "highlightColors": {
+        "primaryBackground": "#151e22",
+        "secondaryBackground": "#0d1416",
+        "contentText": "#b8c4ca",
+        "headingText": "#ffffff",
+        "mutedText": "#7a8890",
+        "borderColor": "#2a3a40",
+        "accentColor": "#4db8a4",
+        "accentTextColor": "#151e22",
+        "ratingStarColor": "#d4960a"
+      }
+    },
+    {
+      "en": {
+        "name": "Vintage Bordeaux",
+        "description": "An elegant and refined color theme blending soft plum tones with deep violet shades for a warm and sophisticated visual experience."
+      },
+      "gr": {
+        "name": "Παλαιωμένο Μπορντό",
+        "description": "Ένας κομψός και εκλεπτυσμένος συνδυασμός που ενώνει απαλές δαμασκηνί αποχρώσεις με βαθιούς βιολετί τόνους για μια ζεστή και προσεγμένη αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#faf8f5",
+        "secondaryBackground": "#f0ebe4",
+        "contentText": "#4a3d4a",
+        "headingText": "#2e1f2e",
+        "mutedText": "#8a7d8a",
+        "borderColor": "#ddd5dd",
+        "accentColor": "#7b4a6e",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#d4a017"
+      },
+      "highlightColors": {
+        "primaryBackground": "#2e1f2e",
+        "secondaryBackground": "#1e1220",
+        "contentText": "#ddd0dd",
+        "headingText": "#ffffff",
+        "mutedText": "#9a8d9a",
+        "borderColor": "#4a3d4a",
+        "accentColor": "#c9a0bb",
+        "accentTextColor": "#2e1f2e",
+        "ratingStarColor": "#d4a017"
+      }
+    },
+    {
+      "en": {
+        "name": "Desert Shadows",
+        "description": "A warm, earthy color theme inspired by desert tones, combining soft sand backgrounds with deep shadows and natural clay accents for a grounded and elegant experience."
+      },
+      "gr": {
+        "name": "Σκιές της Ερήμου",
+        "description": "Ένας ζεστός γήινος σχεδιασμός εμπνευσμένος από την έρημο που συνδυάζει απαλούς τόνους άμμου με βαθιές σκιές και φυσικές γήινες πινελιές για μια ισορροπημένη και κομψή αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#f5efe5",
+        "secondaryBackground": "#ebe1d2",
+        "contentText": "#3e342e",
+        "headingText": "#1a1412",
+        "mutedText": "#897a6e",
+        "borderColor": "#d7cab8",
+        "accentColor": "#a66c5f",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#c9a86a"
+      },
+      "highlightColors": {
+        "primaryBackground": "#1a1412",
+        "secondaryBackground": "#110b09",
+        "contentText": "#d8cdbf",
+        "headingText": "#f5efe5",
+        "mutedText": "#8a7a6a",
+        "borderColor": "#3a2f2a",
+        "accentColor": "#cba66c",
+        "accentTextColor": "#1a1412",
+        "ratingStarColor": "#cba66c"
+      }
+    },
+    {
+      "en": {
+        "name": "Volcanic Glass",
+        "description": "A minimal monochrome-inspired UI theme combining soft neutral surfaces with deep dark contrast and subtle warm golden accents for a clean and elegant experience."
+      },
+      "gr": {
+        "name": "Ηφαιστειακό Γυαλί",
+        "description": "Ένας μινιμαλιστικός σχεδιασμός με ουδέτερες επιφάνειες, βαθύ σκοτεινό υπόβαθρο και διακριτικές χρυσές πινελιές που δημιουργούν μια καθαρή και κομψή αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#f1f1f1",
+        "secondaryBackground": "#e6e6e6",
+        "contentText": "#3d3b38",
+        "headingText": "#1a1918",
+        "mutedText": "#949494",
+        "borderColor": "#cfcfcf",
+        "accentColor": "#1a1918",
+        "accentTextColor": "#fdfcf8",
+        "ratingStarColor": "#b8860b"
+      },
+      "highlightColors": {
+        "primaryBackground": "#1a1918",
+        "secondaryBackground": "#0e0d0c",
+        "contentText": "#cccccc",
+        "headingText": "#fdfcf8",
+        "mutedText": "#979797",
+        "borderColor": "#3a3834",
+        "accentColor": "#f6f6f6",
+        "accentTextColor": "#1a1918",
+        "ratingStarColor": "#d4a843"
+      }
+    },
+    {
+      "en": {
+        "name": "Forest Bloom",
+        "description": "A fresh nature-inspired UI theme combining soft light greens with deep forest tones for a calm, balanced, and organic visual experience."
+      },
+      "gr": {
+        "name": "Ανθισμένο Δάσος",
+        "description": "Ένας φυσικός σχεδιασμός εμπνευσμένος από το δάσος που συνδυάζει απαλούς πράσινους τόνους με βαθιές σκούρες αποχρώσεις για μια ήρεμη και ισορροπημένη αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#fafbf8",
+        "secondaryBackground": "#f0f3ec",
+        "contentText": "#3a4a3a",
+        "headingText": "#1a2e1a",
+        "mutedText": "#6e7d6e",
+        "borderColor": "#dde3d8",
+        "accentColor": "#3a7d44",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#e8b931"
+      },
+      "highlightColors": {
+        "primaryBackground": "#1a2e1a",
+        "secondaryBackground": "#121f12",
+        "contentText": "#adb8a8",
+        "headingText": "#f0f3ec",
+        "mutedText": "#78856f",
+        "borderColor": "#2e3e2e",
+        "accentColor": "#6db868",
+        "accentTextColor": "#1a2e1a",
+        "ratingStarColor": "#e8b931"
+      }
+    },
+    {
+      "en": {
+        "name": "Amber in the Ash",
+        "description": "A warm earthy UI theme combining soft sandstone tones with deep dark surfaces and natural amber accents for a calm and refined visual balance."
+      },
+      "gr": {
+        "name": "Κεχριμπάρι στη Στάχτη",
+        "description": "Ένας ζεστός γήινος σχεδιασμός που συνδυάζει απαλές αποχρώσεις ψαμμίτη με βαθιές σκούρες επιφάνειες και φυσικές κεχριμπαρένιες πινελιές για μια ήρεμη και εκλεπτυσμένη αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#faf9f7",
+        "secondaryBackground": "#f0ede8",
+        "contentText": "#44403c",
+        "headingText": "#1c1917",
+        "mutedText": "#78716c",
+        "borderColor": "#d6d3cd",
+        "accentColor": "#8c6434",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#c9952e"
+      },
+      "highlightColors": {
+        "primaryBackground": "#1c1917",
+        "secondaryBackground": "#121110",
+        "contentText": "#b8b2a8",
+        "headingText": "#f5f2ed",
+        "mutedText": "#8a847b",
+        "borderColor": "#3a3632",
+        "accentColor": "#c9a06c",
+        "accentTextColor": "#1c1917",
+        "ratingStarColor": "#c9952e"
+      }
+    },
+    {
+      "en": {
+        "name": "Aegean Breeze",
+        "description": "A clean and refreshing UI theme inspired by the Aegean sea, combining soft coastal blues with deep ocean tones for a calm and modern visual experience."
+      },
+      "gr": {
+        "name": "Αύρα του Αιγαίου",
+        "description": "Ένας καθαρός και δροσερός σχεδιασμός εμπνευσμένος από το Αιγαίο που συνδυάζει απαλούς γαλάζιους τόνους με βαθιές θαλάσσιες αποχρώσεις για μια ήρεμη και σύγχρονη αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#fcfcfa",
+        "secondaryBackground": "#eff3f5",
+        "contentText": "#2d4668",
+        "headingText": "#0a2747",
+        "mutedText": "#7b8ba3",
+        "borderColor": "#d6dfe8",
+        "accentColor": "#0f6ec5",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#e57b52"
+      },
+      "highlightColors": {
+        "primaryBackground": "#082645",
+        "secondaryBackground": "#041a33",
+        "contentText": "#c8d8ea",
+        "headingText": "#ffffff",
+        "mutedText": "#7691b2",
+        "borderColor": "#164171",
+        "accentColor": "#7cc2ee",
+        "accentTextColor": "#082645",
+        "ratingStarColor": "#e57b52"
+      }
+    },
+    {
+      "en": {
+        "name": "Crimson Noir",
+        "description": "A bold and modern UI theme combining clean neutral surfaces with deep dark contrasts and strong crimson accents for a sharp and elegant visual identity."
+      },
+      "gr": {
+        "name": "Πορφυρό Νουάρ",
+        "description": "Ένας τολμηρός και μοντέρνος σχεδιασμός που συνδυάζει καθαρές ουδέτερες επιφάνειες με βαθιές σκοτεινές αντιθέσεις και έντονες κόκκινες πινελιές για μια δυναμική και κομψή αισθητική ταυτότητα."
+      },
+      "standardColors": {
+        "primaryBackground": "#f1f1f3",
+        "secondaryBackground": "#e3e3e7",
+        "contentText": "#1f1f22",
+        "headingText": "#0a0a0c",
+        "mutedText": "#6e6e76",
+        "borderColor": "#c8c8cf",
+        "accentColor": "#a01824",
+        "accentTextColor": "#f1f1f3",
+        "ratingStarColor": "#a01824"
+      },
+      "highlightColors": {
+        "primaryBackground": "#0a0a0c",
+        "secondaryBackground": "#000000",
+        "contentText": "#c4c4cc",
+        "headingText": "#f1f1f3",
+        "mutedText": "#6e6e76",
+        "borderColor": "#2a2a2e",
+        "accentColor": "#e3354a",
+        "accentTextColor": "#0a0a0c",
+        "ratingStarColor": "#e3354a"
+      }
+    },
+    {
+      "en": {
+        "name": "Liquid Gold",
+        "description": "A warm and elegant UI theme combining soft neutral surfaces with deep dark contrast and rich golden accents for a refined and luxurious visual experience."
+      },
+      "gr": {
+        "name": "Ρευστός Χρυσός",
+        "description": "Ένας ζεστός και κομψός σχεδιασμός που συνδυάζει απαλές ουδέτερες επιφάνειες με βαθιές σκοτεινές αντιθέσεις και πλούσιες χρυσές πινελιές για μια εκλεπτυσμένη και πολυτελή αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#f5f3ef",
+        "secondaryBackground": "#eae8e2",
+        "contentText": "#3c3a37",
+        "headingText": "#1a1918",
+        "mutedText": "#787570",
+        "borderColor": "#d5d2cb",
+        "accentColor": "#c47a20",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#c47a20"
+      },
+      "highlightColors": {
+        "primaryBackground": "#1a1918",
+        "secondaryBackground": "#0f0e0d",
+        "contentText": "#cac7c0",
+        "headingText": "#ffffff",
+        "mutedText": "#787570",
+        "borderColor": "#2e2c29",
+        "accentColor": "#e09228",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#e09228"
+      }
+    },
+    {
+      "en": {
+        "name": "Rust and Ochre",
+        "description": "A warm and grounded UI theme combining soft natural neutrals with deep dark tones and muted earthy red accents for a calm and elegant visual balance."
+      },
+      "gr": {
+        "name": "Σκουριά και Ώχρα",
+        "description": "Ένας ζεστός και γήινος σχεδιασμός που συνδυάζει απαλές φυσικές αποχρώσεις με βαθιές σκούρες επιφάνειες και διακριτικές γήινες κόκκινες πινελιές για μια ήρεμη και ισορροπημένη αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#faf8f6",
+        "secondaryBackground": "#f2eee9",
+        "contentText": "#453d36",
+        "headingText": "#1f1a17",
+        "mutedText": "#7d7369",
+        "borderColor": "#ddd6cd",
+        "accentColor": "#6e3b3b",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#d4a843"
+      },
+      "highlightColors": {
+        "primaryBackground": "#1f1a17",
+        "secondaryBackground": "#151210",
+        "contentText": "#bfb5a8",
+        "headingText": "#f5f0eb",
+        "mutedText": "#8a7f73",
+        "borderColor": "#3a322b",
+        "accentColor": "#c07070",
+        "accentTextColor": "#1f1a17",
+        "ratingStarColor": "#d4a843"
+      }
+    },
+    {
+      "en": {
+        "name": "Emerald Shades",
+        "description": "A calm and natural UI theme inspired by deep forest tones, combining soft earthy backgrounds with rich dark greens and subtle natural accents for a balanced and refreshing experience."
+      },
+      "gr": {
+        "name": "Σμαραγδένιες Σκιές",
+        "description": "Ένας ήρεμος και φυσικός σχεδιασμός εμπνευσμένος από βαθιές δασικές αποχρώσεις που συνδυάζει απαλές γήινες επιφάνειες με σκούρα πράσινα και διακριτικές φυσικές πινελιές για μια ισορροπημένη και δροσερή αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#f7f5f0",
+        "secondaryBackground": "#ecebe2",
+        "contentText": "#2e3a33",
+        "headingText": "#0f2318",
+        "mutedText": "#6b7a71",
+        "borderColor": "#d4d1c4",
+        "accentColor": "#214a35",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#c48e2a"
+      },
+      "highlightColors": {
+        "primaryBackground": "#0f2318",
+        "secondaryBackground": "#081611",
+        "contentText": "#c3c8bf",
+        "headingText": "#f7f5f0",
+        "mutedText": "#7e8b82",
+        "borderColor": "#2f4b3b",
+        "accentColor": "#a9c29a",
+        "accentTextColor": "#0f2318",
+        "ratingStarColor": "#c48e2a"
+      }
+    },
+    {
+      "en": {
+        "name": "At the Olive Grove",
+        "description": "A calm and balanced UI theme inspired by natural sage tones and soft neutral horizons, combining gentle greens with warm, modern contrasts for a clean and soothing experience."
+      },
+      "gr": {
+        "name": "Στον Ελαιώνα",
+        "description": "Ένας ήρεμος και ισορροπημένος σχεδιασμός εμπνευσμένος από φυσικούς τόνους φασκόμηλου και απαλούς ορίζοντες που συνδυάζει ήπιες πράσινες αποχρώσεις με ζεστές, σύγχρονες αντιθέσεις για μια καθαρή και γαλήνια αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#fffbf7",
+        "secondaryBackground": "#f5efe8",
+        "contentText": "#4a5568",
+        "headingText": "#2d3436",
+        "mutedText": "#8a9199",
+        "borderColor": "#e8e0d8",
+        "accentColor": "#5b8c5a",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#f5b942"
+      },
+      "highlightColors": {
+        "primaryBackground": "#2d3436",
+        "secondaryBackground": "#1e2526",
+        "contentText": "#c8c0b8",
+        "headingText": "#fffbf7",
+        "mutedText": "#8a8480",
+        "borderColor": "#4a4240",
+        "accentColor": "#7fb87e",
+        "accentTextColor": "#2d3436",
+        "ratingStarColor": "#f5b942"
+      }
+    },
+    {
+      "en": {
+        "name": "Solar Flares",
+        "description": "A modern UI theme combining clean neutral surfaces with deep dark contrast and warm ember-like orange accents for a bold and energetic urban feel."
+      },
+      "gr": {
+        "name": "Ηλιακές Εκλάμψεις",
+        "description": "Ένας μοντέρνος σχεδιασμός που συνδυάζει καθαρές ουδέτερες επιφάνειες με βαθιές σκοτεινές αντιθέσεις και ζεστές πορτοκαλί πινελιές για μια δυναμική και σύγχρονη αστική αισθητική."
+      },
+      "standardColors": {
+        "primaryBackground": "#ffffff",
+        "secondaryBackground": "#f2f4f7",
+        "contentText": "#374151",
+        "headingText": "#111827",
+        "mutedText": "#6b7280",
+        "borderColor": "#d1d5db",
+        "accentColor": "#e0520e",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#f59e0b"
+      },
+      "highlightColors": {
+        "primaryBackground": "#0f1729",
+        "secondaryBackground": "#0a1020",
+        "contentText": "#b8c5d6",
+        "headingText": "#ffffff",
+        "mutedText": "#6b7fa0",
+        "borderColor": "#1e2d45",
+        "accentColor": "#f06722",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#f59e0b"
+      }
+    },
+    {
+      "en": {
+        "name": "Deep Coral",
+        "description": "A bold and elegant UI theme combining soft peach tones with deep dark purple contrast and vibrant accent colors for a modern and expressive visual style."
+      },
+      "gr": {
+        "name": "Βαθειά στα Κοράλλια",
+        "description": "Ένας τολμηρός και κομψός σχεδιασμός που συνδυάζει απαλές ροδακινί αποχρώσεις με βαθιές σκούρες μωβ αντιθέσεις και έντονες πινελιές για μια σύγχρονη και εκφραστική αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#ffe2d4",
+        "secondaryBackground": "#ffc4ad",
+        "contentText": "#43254d",
+        "headingText": "#2c1538",
+        "mutedText": "#79558a",
+        "borderColor": "#ffb59c",
+        "accentColor": "#d62b5c",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#f5b800"
+      },
+      "highlightColors": {
+        "primaryBackground": "#2c1538",
+        "secondaryBackground": "#3e2050",
+        "contentText": "#dac8e0",
+        "headingText": "#ffe2d4",
+        "mutedText": "#9b89a4",
+        "borderColor": "#4a2a5e",
+        "accentColor": "#ffc857",
+        "accentTextColor": "#2c1538",
+        "ratingStarColor": "#ffd166"
+      }
+    },
+    {
+      "en": {
+        "name": "Cocoa Scent",
+        "description": "A warm and cozy UI theme inspired by soft cocoa tones, combining gentle neutral backgrounds with deep earthy browns and muted red accents for an elegant and comfortable visual experience."
+      },
+      "gr": {
+        "name": "Άρωμα Κακάου",
+        "description": "Ένας ζεστός και ήρεμος σχεδιασμός εμπνευσμένος από απαλούς τόνους κακάο που συνδυάζει γήινες ουδέτερες επιφάνειες με βαθιά καφέ χρώματα και διακριτικές κόκκινες πινελιές για μια κομψή και άνετη αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#fdf8f4",
+        "secondaryBackground": "#f5ece5",
+        "contentText": "#584840",
+        "headingText": "#281e18",
+        "mutedText": "#9a8880",
+        "borderColor": "#e8d8d0",
+        "accentColor": "#b85c5c",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#c89020"
+      },
+      "highlightColors": {
+        "primaryBackground": "#281e18",
+        "secondaryBackground": "#1c1410",
+        "contentText": "#d4c4bc",
+        "headingText": "#faf5f0",
+        "mutedText": "#9a8880",
+        "borderColor": "#584840",
+        "accentColor": "#f2b8ac",
+        "accentTextColor": "#281e18",
+        "ratingStarColor": "#c89020"
+      }
+    },
+    {
+      "en": {
+        "name": "Atlantic",
+        "description": "A calm and balanced UI theme inspired by deep harbor waters, combining soft neutral surfaces with strong blue accents and deep dark contrast for a clear and modern experience."
+      },
+      "gr": {
+        "name": "Ατλαντικός",
+        "description": "Ένας ήρεμος και ισορροπημένος σχεδιασμός εμπνευσμένος από βαθιά νερά λιμανιού που συνδυάζει απαλές ουδέτερες επιφάνειες με έντονες μπλε πινελιές και βαθιές σκοτεινές αντιθέσεις για μια καθαρή και σύγχρονη αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#f5f2ec",
+        "secondaryBackground": "#ebe6dc",
+        "contentText": "#3f4a56",
+        "headingText": "#1d2530",
+        "mutedText": "#8a8f99",
+        "borderColor": "#d8d2c6",
+        "accentColor": "#2a70ca",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#e89d2e"
+      },
+      "highlightColors": {
+        "primaryBackground": "#1d2a38",
+        "secondaryBackground": "#131b25",
+        "contentText": "#b5bfc8",
+        "headingText": "#ffffff",
+        "mutedText": "#78858f",
+        "borderColor": "#2d3a4a",
+        "accentColor": "#2a70ca",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#e89d2e"
+      }
+    },
+    {
+      "en": {
+        "name": "Cyber Lime",
+        "description": "A bold and energetic UI theme combining soft warm neutrals with deep dark contrast and vibrant lime and ember accents for a striking modern visual style."
+      },
+      "gr": {
+        "name": "Ψηφιακό Λάιμ",
+        "description": "Ένας δυναμικός και έντονος σχεδιασμός που συνδυάζει ζεστές ουδέτερες αποχρώσεις με βαθιές σκούρες αντιθέσεις και ζωντανές πινελιές λάιμ και πορτοκαλί για μια μοντέρνα και εντυπωσιακή αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#fdfbf6",
+        "secondaryBackground": "#f1ebdf",
+        "contentText": "#2a2826",
+        "headingText": "#0a0a0a",
+        "mutedText": "#7a766d",
+        "borderColor": "#d4cdbe",
+        "accentColor": "#abc903",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#ff6b4a"
+      },
+      "highlightColors": {
+        "primaryBackground": "#2f2f2f",
+        "secondaryBackground": "#000000",
+        "contentText": "#c4bfb4",
+        "headingText": "#f2efe8",
+        "mutedText": "#7a766d",
+        "borderColor": "#2a2826",
+        "accentColor": "#d1f600",
+        "accentTextColor": "#0a0a0a",
+        "ratingStarColor": "#ff6b4a"
+      }
+    },
+    {
+      "en": {
+        "name": "Midnight Gold",
+        "description": "A refined UI theme combining soft neutral surfaces with deep midnight contrast and rich golden accents for a premium and elegant visual experience."
+      },
+      "gr": {
+        "name": "Χρυσά Μεσάνυχτα",
+        "description": "Ένας εκλεπτυσμένος σχεδιασμός που συνδυάζει απαλές ουδέτερες επιφάνειες με βαθιές νυχτερινές αντιθέσεις και πλούσιες χρυσές πινελιές για μια κομψή και premium αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#fafaf8",
+        "secondaryBackground": "#f0ede6",
+        "contentText": "#3a3c4a",
+        "headingText": "#1a1c2b",
+        "mutedText": "#7a7c88",
+        "borderColor": "#dddbe0",
+        "accentColor": "#b8860b",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#d4a017"
+      },
+      "highlightColors": {
+        "primaryBackground": "#1a1c2b",
+        "secondaryBackground": "#111220",
+        "contentText": "#c8c6d0",
+        "headingText": "#ffffff",
+        "mutedText": "#8a889a",
+        "borderColor": "#3a3c4a",
+        "accentColor": "#d4a843",
+        "accentTextColor": "#1a1c2b",
+        "ratingStarColor": "#d4a017"
+      }
+    },
+    {
+      "en": {
+        "name": "Mulberry",
+        "description": "A refined UI theme combining soft neutral rose-gray surfaces with deep violet-dark contrasts and elegant amethyst accents for a sophisticated and expressive visual style."
+      },
+      "gr": {
+        "name": "Βαθύ Βατόμουρο",
+        "description": "Ένας εκλεπτυσμένος σχεδιασμός που συνδυάζει απαλές ροζ-γκρι ουδέτερες αποχρώσεις με βαθιές βιολετί σκοτεινές αντιθέσεις και κομψές πινελιές αμέθυστου για μια εκφραστική και premium αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#ebe7e7",
+        "secondaryBackground": "#ddd8d8",
+        "contentText": "#3d3940",
+        "headingText": "#17151b",
+        "mutedText": "#7a747e",
+        "borderColor": "#cfc9cb",
+        "accentColor": "#66284a",
+        "accentTextColor": "#ebe7e7",
+        "ratingStarColor": "#c89449"
+      },
+      "highlightColors": {
+        "primaryBackground": "#181620",
+        "secondaryBackground": "#23202c",
+        "contentText": "#c5bfc4",
+        "headingText": "#ebe7e7",
+        "mutedText": "#898390",
+        "borderColor": "#35303a",
+        "accentColor": "#c78aa8",
+        "accentTextColor": "#181620",
+        "ratingStarColor": "#dda86a"
+      }
+    },
+    {
+      "en": {
+        "name": "Glacial Horizons",
+        "description": "A clean and modern UI theme inspired by coastal Nordic tones, combining soft icy neutrals with deep blue contrasts and fresh green accents for a calm and structured visual experience."
+      },
+      "gr": {
+        "name": "Παγωμένοι Ορίζοντες",
+        "description": "Ένας καθαρός και σύγχρονος σχεδιασμός εμπνευσμένος από σκανδιναβικούς παράκτιους τόνους που συνδυάζει ψυχρές ουδέτερες αποχρώσεις με βαθιές μπλε αντιθέσεις και φρέσκες πράσινες πινελιές για μια ήρεμη και οργανωμένη αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#f5f8fa",
+        "secondaryBackground": "#e6edf1",
+        "contentText": "#4a5560",
+        "headingText": "#3e4b57",
+        "mutedText": "#7d8894",
+        "borderColor": "#cfd5db",
+        "accentColor": "#56a56c",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#f5b93a"
+      },
+      "highlightColors": {
+        "primaryBackground": "#1a2530",
+        "secondaryBackground": "#0f1820",
+        "contentText": "#c4ccd4",
+        "headingText": "#f1f3f5",
+        "mutedText": "#7d8894",
+        "borderColor": "#2e3a48",
+        "accentColor": "#56a56c",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#f5b93a"
+      }
+    },
+    {
+      "en": {
+        "name": "Warm Clay",
+        "description": "A grounded and elegant UI theme inspired by warm clay tones, combining soft natural neutrals with deep earthy contrasts and muted terracotta accents for a cozy and refined visual experience."
+      },
+      "gr": {
+        "name": "Θερμός Πηλός",
+        "description": "Ένας γήινος και κομψός σχεδιασμός εμπνευσμένος από ζεστούς τόνους πηλού που συνδυάζει απαλές φυσικές αποχρώσεις με βαθιές γήινες αντιθέσεις και διακριτικές τερακότα πινελιές για μια ζεστή και εκλεπτυσμένη αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#faf9f6",
+        "secondaryBackground": "#f0ece5",
+        "contentText": "#4a4340",
+        "headingText": "#2c2420",
+        "mutedText": "#8a7f78",
+        "borderColor": "#ddd5cb",
+        "accentColor": "#c4724e",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#e8a838"
+      },
+      "highlightColors": {
+        "primaryBackground": "#2c2420",
+        "secondaryBackground": "#1e1814",
+        "contentText": "#c8bfb4",
+        "headingText": "#f5f0e8",
+        "mutedText": "#96897c",
+        "borderColor": "#3d3530",
+        "accentColor": "#d4906e",
+        "accentTextColor": "#1e1814",
+        "ratingStarColor": "#e8a838"
+      }
+    },
+    {
+      "en": {
+        "name": "Abyssal Teal",
+        "description": "A fresh and organic UI theme inspired by coastal sea moss tones, combining soft natural greens with deep ocean teal contrasts for a calm and balanced visual experience."
+      },
+      "gr": {
+        "name": "Πετρόλ της Αβύσσου",
+        "description": "Ένας φρέσκος και φυσικός σχεδιασμός εμπνευσμένος από θαλάσσιους και πράσινους τόνους που συνδυάζει απαλές γήινες αποχρώσεις με βαθιές θαλασσιές αντιθέσεις για μια ήρεμη και ισορροπημένη αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#fbfaf4",
+        "secondaryBackground": "#edf3ee",
+        "contentText": "#35504a",
+        "headingText": "#17312b",
+        "mutedText": "#71837d",
+        "borderColor": "#d8e2dc",
+        "accentColor": "#1f7a6b",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#d8a84a"
+      },
+      "highlightColors": {
+        "primaryBackground": "#10332d",
+        "secondaryBackground": "#25443e",
+        "contentText": "#dce7e1",
+        "headingText": "#fbfaf4",
+        "mutedText": "#a8bab2",
+        "borderColor": "#3f5d56",
+        "accentColor": "#9bd8ca",
+        "accentTextColor": "#10332d",
+        "ratingStarColor": "#f0c96a"
+      }
+    },
+    {
+      "en": {
+        "name": "Copper and Steel",
+        "description": "A modern UI theme combining cool steel-toned surfaces with deep dark contrast and warm sunset orange accents for a bold and balanced visual experience."
+      },
+      "gr": {
+        "name": "Χαλκός και Ατσάλι",
+        "description": "Ένας μοντέρνος σχεδιασμός που συνδυάζει ψυχρές μεταλλικές αποχρώσεις με βαθιές σκοτεινές επιφάνειες και ζεστές πορτοκαλί πινελιές ηλιοβασιλέματος για μια δυναμική και ισορροπημένη αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#f7f8fa",
+        "secondaryBackground": "#eceff3",
+        "contentText": "#3b4455",
+        "headingText": "#121722",
+        "mutedText": "#838b99",
+        "borderColor": "#d9dde4",
+        "accentColor": "#e15a1a",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#f4b235"
+      },
+      "highlightColors": {
+        "primaryBackground": "#121722",
+        "secondaryBackground": "#0a0e15",
+        "contentText": "#b5bcca",
+        "headingText": "#f7f8fa",
+        "mutedText": "#6e7685",
+        "borderColor": "#262c38",
+        "accentColor": "#f16a2c",
+        "accentTextColor": "#121722",
+        "ratingStarColor": "#f4b235"
+      }
+    },
+    {
+      "en": {
+        "name": "Polar Teal",
+        "description": "A clean and modern UI theme inspired by icy arctic tones and deep ocean contrasts, combining cool neutrals with vibrant teal accents for a crisp and refreshing experience."
+      },
+      "gr": {
+        "name": "Πετρόλ του Πάγου",
+        "description": "Ένας καθαρός και σύγχρονος σχεδιασμός εμπνευσμένος από παγωμένους αρκτικούς τόνους και βαθιές θαλάσσιες αντιθέσεις που συνδυάζει ψυχρές ουδέτερες αποχρώσεις με έντονες τιρκουάζ πινελιές για μια δροσερή και φρέσκια αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#f7f8f7",
+        "secondaryBackground": "#efefef",
+        "contentText": "#3a4049",
+        "headingText": "#0b0f14",
+        "mutedText": "#6b7280",
+        "borderColor": "#d4d6d4",
+        "accentColor": "#0891b2",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#f59e0b"
+      },
+      "highlightColors": {
+        "primaryBackground": "#0b0f14",
+        "secondaryBackground": "#1a1f27",
+        "contentText": "#d4d6d4",
+        "headingText": "#f7f8f7",
+        "mutedText": "#8a929d",
+        "borderColor": "#2d333c",
+        "accentColor": "#22d3ee",
+        "accentTextColor": "#0b0f14",
+        "ratingStarColor": "#fbbf24"
+      }
+    },
+    {
+      "en": {
+        "name": "Muted Rose",
+        "description": "A warm and elegant UI theme inspired by rosewood tones, combining soft blush neutrals with deep dark contrasts and muted rose accents for a refined and cozy visual experience."
+      },
+      "gr": {
+        "name": "Σάπιο Μήλο",
+        "description": "Ένας ζεστός και κομψός σχεδιασμός εμπνευσμένος από αποχρώσεις ροδόξυλου που συνδυάζει απαλές ροζ-ουδέτερες επιφάνειες με βαθιές σκούρες αντιθέσεις και διακριτικές ροζ πινελιές για μια εκλεπτυσμένη και ζεστή αισθητική εμπειρία."
+      },
+      "standardColors": {
+        "primaryBackground": "#fdf9f7",
+        "secondaryBackground": "#f3ebe6",
+        "contentText": "#4d4145",
+        "headingText": "#2a2024",
+        "mutedText": "#8c7e82",
+        "borderColor": "#e0d5d0",
+        "accentColor": "#8c5e6b",
+        "accentTextColor": "#ffffff",
+        "ratingStarColor": "#d4a060"
+      },
+      "highlightColors": {
+        "primaryBackground": "#2a2024",
+        "secondaryBackground": "#1e1618",
+        "contentText": "#c4b8b0",
+        "headingText": "#f5efe8",
+        "mutedText": "#8e807a",
+        "borderColor": "#3e3035",
+        "accentColor": "#c9929e",
+        "accentTextColor": "#1e1618",
+        "ratingStarColor": "#d4a060"
+      }
+    }
+  ]
+}

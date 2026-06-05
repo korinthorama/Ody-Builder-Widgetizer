@@ -1,0 +1,5 @@
+{
+    "id": "settings",
+    "label": "⚙️Widgetizer Settings",
+    "description": "Ορισμός των CSS settings μεταβλητών για τα Widgetizer widgets. Τοποθετείται στην τελευταία σειρά του builder page"
+}
