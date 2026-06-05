@@ -1,0 +1,143 @@
+    <header
+      id="header"
+      class="widget widget-site-header color-scheme-standard-primary"
+      data-widget-id="header"
+      data-widget-type="header"
+    >
+      <style>
+        .widget-site-header .header-logo-image {
+          max-width: 250px;
+          height: auto;
+          display: block;
+        }
+        .widget-site-header .header-logo img[src$=".svg"],
+        .widget-site-header .header-logo-image[src$=".svg"] {
+          width: auto;
+          height: auto;
+          max-height: 250px;
+          min-height: 40px;
+          object-fit: contain;
+          vertical-align: middle;
+        }
+        .widget-site-header .header-logo {
+          line-height: 0;
+        }
+        .widget-site-header .header-logo img {
+          display: inline-block;
+        }
+      </style>
+
+      <div class="header-inner header-top-row">
+        <div class="header-branding">
+          <a href="index.html" class="header-logo">
+            <img
+              src="assets/images/logo.png"
+              alt=""
+              class="header-logo-image header-logo-default"
+              width="254"
+              height="90"
+            />
+            <img
+              src="assets/images/logo.png"
+              alt=""
+              class="header-logo-image header-logo-transparent"
+              width="254"
+              height="90"
+            />
+          </a>
+        </div>
+
+        <div class="header-end">
+          <div class="header-contact header-contact-right">
+            <span class="header-contact-line t-sm t-body-bold t-heading" data-setting="contactDetailsLine1">
+            </span>
+            <span class="header-contact-line t-xs t-muted" data-setting="contactDetailsLine2">
+            </span>
+          </div>
+          <a href="#" class="widget-button desktop-cta widget-button-secondary">
+            CTA
+          </a>
+        </div>
+
+        <button
+          type="button"
+          class="menu-toggle"
+          aria-label="Toggle navigation menu"
+          aria-expanded="false"
+          aria-controls="main-navigation"
+        >
+          <svg
+            class="icon-menu"
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+            <path d="M4 6l16 0" />
+            <path d="M4 12l16 0" />
+            <path d="M4 18l16 0" />
+          </svg>
+          <svg
+            class="icon-close"
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+            <path d="M18 6l-12 12" />
+            <path d="M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="header-nav-row">
+        <nav class="header-nav" id="main-navigation" aria-label="Primary">
+          <div class="nav-close">
+            <span class="nav-close-title">Menu</span>
+            <button type="button" class="nav-close-btn" aria-label="Close navigation menu">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M18 6l-12 12" />
+                <path d="M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <ul class="nav-list">
+          </ul>
+
+          <a href="#" class="widget-button widget-button-full widget-button-large mobile-cta widget-button-secondary">
+            CTA
+          </a>
+
+          <div class="header-contact header-contact-mobile">
+            <span class="header-contact-line t-lg t-body-bold t-heading" data-setting="contactDetailsLine1">
+            </span>
+            <span class="header-contact-line t-xs t-muted" data-setting="contactDetailsLine2">
+            </span>
+          </div>
+        </nav>
+      </div>
+    </header>
