@@ -6,15 +6,21 @@
 ?>
 <style>
     .ody_builder_parameter { max-width: 500px !important; }
-    .wdg-fs-item { border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px; background: #f9f9f9; }
-    .wdg-fs-item-header { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #002e3a; border-radius: 4px 4px 0 0; cursor: move; }
-    .wdg-fs-item-header span { color: white; font-size: 12px; flex: 1; }
+    .wdg-fs-item { border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px; background: #f9f9f9; transition: box-shadow 0.3s ease; }
+    .wdg-fs-item-header { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #002e3a; border-radius: 4px 4px 0 0; }
+    .wdg-fs-item-header span { color: white; font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wdg-fs-item-body { padding: 8px; }
     .wdg-fs-item-body .ody_builder_parameter { max-width: 100% !important; margin-bottom: 6px; }
     .wdg-fs-add-btn { display: inline-block; padding: 6px 16px; background: #002e3a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; margin-top: 4px; }
     .wdg-fs-add-btn:hover { background: #004a5c; }
     .wdg-fs-icon-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
     .wdg-fs-icon-preview { font-size: 28px; color: #002e3a; width: 36px; text-align: center; visibility: hidden; }
+
+    /* ── Βελάκια μετακίνησης ── */
+    .wdg-fs-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
+    .wdg-fs-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
+    .wdg-fs-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .wdg-fs-move-btn:active { transform: scale(0.9); }
 </style>
 
 <!-- ══ ΓΕΝΙΚΑ ════════════════════════════════════════════════════════════════ -->
@@ -112,31 +118,87 @@ jQuery(function ($) {
     $('#wdg_fs_color_scheme').val(pval('color_scheme', 'color-scheme-standard-primary'));
     $('#wdg_fs_container_width').val(pval('container_width', 'xl'));
 
-
     var _item_idx = 0;
+
+    // ── Item display ──────────────────────────────────────────────────────────
+    function updateItemDisplay($item) {
+        var titleVal = $item.find('.wdg-fs-title').val();
+        var itemNumber = $item.index() + 1;
+        var displayText = '<?php echo t("Χαρακτηριστικό"); ?> ' + itemNumber;
+        if (titleVal && titleVal.trim() !== '') {
+            displayText += ': ' + titleVal;
+        }
+        $item.find('.wdg-fs-item-header span').text(displayText);
+    }
+
+    function renumberItems() {
+        $('#wdg_fs_items .wdg-fs-item').each(function () {
+            updateItemDisplay($(this));
+        });
+    }
+
+    // ── Move functions ────────────────────────────────────────────────────────
+    function moveItemUp($item) {
+        var $prev = $item.prev('.wdg-fs-item');
+        if ($prev.length) {
+            $item.slideUp(1, function () {
+                $item.insertBefore($prev);
+                $item.slideDown(1, function () {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function () { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
+    function moveItemDown($item) {
+        var $next = $item.next('.wdg-fs-item');
+        if ($next.length) {
+            $item.slideUp(1, function () {
+                $item.insertAfter($next);
+                $item.slideDown(1, function () {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function () { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
 
     function addItem(data) {
         data = data || {};
         var idx = _item_idx++;
-        var iconFieldId  = 'wdg_fs_icon_' + idx;
+        var iconFieldId   = 'wdg_fs_icon_' + idx;
         var iconPreviewId = 'wdg_fs_icon_preview_' + idx;
         var iconPickerId  = 'wdg_fs_icon_picker_' + idx;
 
         var $item = $('<div class="wdg-fs-item" data-idx="' + idx + '">');
-        $item.append('<div class="wdg-fs-item-header"><span><?php echo t("Χαρακτηριστικό"); ?> ' + ($('#wdg_fs_items .wdg-fs-item').length + 1) + '</span><button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button></div>');
+        $item.append(
+            '<div class="wdg-fs-item-header">' +
+            '<div class="wdg-fs-move-buttons">' +
+            '<button type="button" class="wdg-fs-move-btn wdg-fs-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+            '<button type="button" class="wdg-fs-move-btn wdg-fs-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+            '</div>' +
+            '<span><?php echo t("Χαρακτηριστικό"); ?> ' + ($('#wdg_fs_items .wdg-fs-item').length + 1) + '</span>' +
+            '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
+            '</div>'
+        );
         var $body = $('<div class="wdg-fs-item-body">');
 
         // Icon picker
         $body.append(
-                '<div class="ody_builder_parameter"><label><?php echo t("Εικονίδιο"); ?></label>' +
-                '<div class="wdg-fs-icon-row">' +
-                '<i id="' + iconPreviewId + '" class="fa wdg-fs-icon-preview" style="font-size: 30px; color: #002e3a;"></i>' +
-                '<a href="<?php echo array_search($block_type, $blocks); ?>-<?php echo $block_type; ?>/widgets/features_split/icons.php?venobox=[id]' + iconFieldId + '"' +
-                ' id="' + iconPickerId + '" class="wdg-fs-icon-picker ody_builder_content_action btn btn-success" data-vbtype="iframe">' +
-                '<?php echo t("Επιλογή εικονιδίου"); ?></a>' +
-                '</div>' +
-                '<input type="hidden" id="' + iconFieldId + '" class="wdg-fs-icon-class" value="">' +
-                '</div>'
+            '<div class="ody_builder_parameter"><label><?php echo t("Εικονίδιο"); ?></label>' +
+            '<div class="wdg-fs-icon-row">' +
+            '<i id="' + iconPreviewId + '" class="fa wdg-fs-icon-preview" style="font-size: 30px; color: #002e3a;"></i>' +
+            '<a href="<?php echo array_search($block_type, $blocks); ?>-<?php echo $block_type; ?>/widgets/features_split/icons.php?venobox=[id]' + iconFieldId + '"' +
+            ' id="' + iconPickerId + '" class="wdg-fs-icon-picker ody_builder_content_action btn btn-success" data-vbtype="iframe">' +
+            '<?php echo t("Επιλογή εικονιδίου"); ?></a>' +
+            '</div>' +
+            '<input type="hidden" id="' + iconFieldId + '" class="wdg-fs-icon-class" value="">' +
+            '</div>'
         );
 
         // Title
@@ -148,7 +210,7 @@ jQuery(function ($) {
         $item.append($body);
         $('#wdg_fs_items').append($item);
 
-        // VenoBox για icon picker — window.venobox απαιτείται από icons.php για close()
+        // VenoBox για icon picker
         window.venobox = new VenoBox({selector: '#' + iconPickerId, fitView: true, ratio: 'full'});
 
         // Φόρτωση αποθηκευμένου icon
@@ -157,19 +219,34 @@ jQuery(function ($) {
             $('#' + iconPreviewId).removeClass().addClass('fa ' + data.icon_class).css('visibility', 'visible');
         }
 
-        $item.find('.wdg-item-remove').on('click', function() { $item.fadeOut(200, function() { $item.remove(); renumberItems(); }); });
-    }
-
-    function renumberItems() {
-        $('#wdg_fs_items .wdg-fs-item').each(function(idx) {
-            $(this).find('.wdg-fs-item-header span').text('<?php echo t("Χαρακτηριστικό"); ?> ' + (idx + 1));
+        // ── Real-time title update ────────────────────────────────────────────
+        $item.find('.wdg-fs-title').on('input', function () {
+            updateItemDisplay($item);
         });
+
+        // ── Move buttons ──────────────────────────────────────────────────────
+        $item.find('.wdg-fs-move-up').on('click', function (e) {
+            e.stopPropagation();
+            moveItemUp($item);
+        });
+        $item.find('.wdg-fs-move-down').on('click', function (e) {
+            e.stopPropagation();
+            moveItemDown($item);
+        });
+
+        $item.find('.wdg-item-remove').on('click', function () {
+            $item.fadeOut(200, function () {
+                $item.remove();
+                renumberItems();
+            });
+        });
+
+        updateItemDisplay($item);
     }
 
     // ── odyRecieveIcon: callback από icons.php ────────────────────────────────
     window.odyRecieveIcon = function(icon_class, target_id) {
         $('#' + target_id).val(icon_class);
-        // Βρες το preview που αντιστοιχεί
         var previewId = target_id.replace('wdg_fs_icon_', 'wdg_fs_icon_preview_');
         $('#' + previewId).removeClass().addClass('fa ' + icon_class).css('visibility', 'visible');
         parent.window.venobox.close();
@@ -177,10 +254,6 @@ jQuery(function ($) {
 
     _items.forEach(function(item) { addItem(item); });
     $('#wdg_fs_add_btn').on('click', function() { addItem({}); });
-
-    if ($.fn.sortable) {
-        $('#wdg_fs_items').sortable({ handle: '.wdg-fs-item-header', placeholder: 'block-placeholder', tolerance: 'pointer', stop: function() { renumberItems(); } });
-    }
 
     label = 'Widget Features Split';
     $('#ody_builder_admin_label').val(label);

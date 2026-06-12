@@ -2,14 +2,20 @@
 
 <style>
     .ody_builder_parameter { max-width: 500px !important; }
-    .wdg-gl-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 6px; background: #f0f4f4; }
-    .wdg-gl-item-header { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #002e3a; border-radius: 4px 4px 0 0; cursor: move; }
-    .wdg-gl-item-header span { color: white; font-size: 11px; flex: 1; }
+    .wdg-gl-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 6px; background: #f0f4f4; transition: box-shadow 0.3s ease; }
+    .wdg-gl-item-header { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #002e3a; border-radius: 4px 4px 0 0; }
+    .wdg-gl-item-header span { color: white; font-size: 11px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wdg-gl-item-body { padding: 8px; }
     .wdg-gl-item-body .ody_builder_parameter { max-width: 100% !important; margin-bottom: 5px; }
     .wdg-img-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .wdg-img-filename { font-size: 12px; color: #999; font-style: italic; word-break: break-all; flex: 1; }
     .wdg-img-preview { max-height: 40px; max-width: 100px; margin-top: 4px; border-radius: 3px; display: none; border: 1px solid #ddd; }
+
+    /* ── Βελάκια μετακίνησης ── */
+    .wdg-gl-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
+    .wdg-gl-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
+    .wdg-gl-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .wdg-gl-move-btn:active { transform: scale(0.9); }
 </style>
 
 <!-- ══ ΓΕΝΙΚΑ ═══════════════════════════════════════════════════════════════ -->
@@ -108,11 +114,9 @@ jQuery(function ($) {
     $('#wdg_gl_columns').val(pval('columns', '4'));
     $('#wdg_gl_aspect_ratio').val(pval('aspect_ratio', '4 / 3'));
 
-
     // ── VenoBox για mediabank ─────────────────────────────────────────────────
     window.venobox = new VenoBox({ selector: '.wdg-gl-select-media', fitView: true, ratio: 'full' });
 
-    // odyRecieveMediabank — csw pattern
     window.odyRecieveMediabank = function(file, id, ext, image_path, callerEl) {
         var targetId = $(callerEl || window._wdg_mediabank_caller).data('wdg-target');
         if (!targetId) return;
@@ -123,6 +127,54 @@ jQuery(function ($) {
         $('#' + targetId + '_remove').css('visibility', 'visible');
     };
 
+    // ── Item display ──────────────────────────────────────────────────────────
+    function updateItemDisplay($item) {
+        var captionVal = $item.find('.wdg-gl-item-caption').val();
+        var itemNumber = $item.index() + 1;
+        var displayText = '<?php echo t("Εικόνα"); ?> ' + itemNumber;
+        if (captionVal && captionVal.trim() !== '') {
+            displayText += ': ' + captionVal;
+        }
+        $item.find('.wdg-gl-item-header span').text(displayText);
+    }
+
+    function renumberItems() {
+        $('#wdg_gl_items_list .wdg-gl-item').each(function () {
+            updateItemDisplay($(this));
+        });
+    }
+
+    // ── Move functions ────────────────────────────────────────────────────────
+    function moveItemUp($item) {
+        var $prev = $item.prev('.wdg-gl-item');
+        if ($prev.length) {
+            $item.slideUp(1, function () {
+                $item.insertBefore($prev);
+                $item.slideDown(1, function () {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function () { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
+    function moveItemDown($item) {
+        var $next = $item.next('.wdg-gl-item');
+        if ($next.length) {
+            $item.slideUp(1, function () {
+                $item.insertAfter($next);
+                $item.slideDown(1, function () {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function () { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
     // ── Add Item ──────────────────────────────────────────────────────────────
     function addItem(itemData) {
         itemData = itemData || {};
@@ -132,7 +184,16 @@ jQuery(function ($) {
         var mediaId = 'wdg_gl_media_' + uid;
 
         var $item = $('<div class="wdg-gl-item" data-ii="' + ii + '">');
-        $item.append('<div class="wdg-gl-item-header"><span><?php echo t("Εικόνα"); ?> ' + (ii + 1) + '</span><button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button></div>');
+        $item.append(
+            '<div class="wdg-gl-item-header">' +
+            '<div class="wdg-gl-move-buttons">' +
+            '<button type="button" class="wdg-gl-move-btn wdg-gl-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+            '<button type="button" class="wdg-gl-move-btn wdg-gl-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+            '</div>' +
+            '<span><?php echo t("Εικόνα"); ?> ' + (ii + 1) + '</span>' +
+            '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
+            '</div>'
+        );
 
         var $body = $('<div class="wdg-gl-item-body">');
 
@@ -179,13 +240,29 @@ jQuery(function ($) {
             $('#' + imgId + '_remove').css('visibility', 'visible');
         }
 
-        $item.find('.wdg-item-remove').on('click', function() {
-            $item.fadeOut(200, function() { $item.remove(); });
+        // ── Real-time caption update ──────────────────────────────────────────
+        $item.find('.wdg-gl-item-caption').on('input', function () {
+            updateItemDisplay($item);
         });
 
-        if ($.fn.sortable) {
-            $('#wdg_gl_items_list').sortable({ handle: '.wdg-gl-item-header', placeholder: 'block-placeholder', tolerance: 'pointer' });
-        }
+        // ── Move buttons ──────────────────────────────────────────────────────
+        $item.find('.wdg-gl-move-up').on('click', function (e) {
+            e.stopPropagation();
+            moveItemUp($item);
+        });
+        $item.find('.wdg-gl-move-down').on('click', function (e) {
+            e.stopPropagation();
+            moveItemDown($item);
+        });
+
+        $item.find('.wdg-item-remove').on('click', function() {
+            $item.fadeOut(200, function() {
+                $item.remove();
+                renumberItems();
+            });
+        });
+
+        updateItemDisplay($item);
     }
 
     _items.forEach(function(item) { addItem(item); });

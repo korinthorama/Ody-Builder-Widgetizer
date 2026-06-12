@@ -217,7 +217,7 @@ echo $_wdg_asset_html;
 
   <div class="widget-container">
     <?php if ($_header_html): ?>
-    <div class="widget-header widget-header--align-start">
+    <div class="widget-header widget-header--align-center">
       <?php echo $_header_html; ?>
     </div>
     <?php endif; ?>

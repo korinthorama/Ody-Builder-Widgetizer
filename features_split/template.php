@@ -30,6 +30,16 @@ if (!$_fa_loaded) {
     $_wdg_asset_html .= '<link rel="stylesheet" href="' . $_fa_css . '">' . PHP_EOL;
     $document->loadedFiles[] = $_fa_css;
 }
+$_wdg_asset_html .= '<script>
+(function(){
+    if (!document.querySelector("link[href*=\'font-awesome\']")) {
+        var l = document.createElement("link");
+        l.rel = "stylesheet";
+        l.href = "' . $_fa_css . '";
+        document.head.appendChild(l);
+    }
+})();
+</script>' . PHP_EOL;
 
 // ── Παράμετροι ────────────────────────────────────────────────────────────────
 $_eyebrow      = htmlspecialchars($wdg_params['eyebrow']      ?? '');

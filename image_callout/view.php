@@ -46,7 +46,7 @@
         align-items: center;
         gap: 6px;
         margin-bottom: 5px;
-        background: #f0f4f4;
+        background: #ededed;
         border-radius: 3px;
         padding: 5px 8px;
     }
@@ -67,6 +67,13 @@
         padding: 0 !important;
         font-weight: bold;
         flex-shrink: 0;
+        background-color: #c00000 !important;
+        text-shadow: 1px 1px 1px rgba(0, 0, 0, 1);
+    }
+
+    .wdg-item-remove:hover {
+        color: #fff;
+        background-color: #ff0000 !important;
     }
 </style>
 <!-- ══ ΚΕΙΜΕΝΟ ═══════════════════════════════════════════════════════════════ -->

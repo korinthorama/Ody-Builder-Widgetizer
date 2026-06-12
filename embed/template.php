@@ -73,20 +73,25 @@ echo $_wdg_asset_html;
   data-widget-type="embed"
 >
   <style>
-    .widget-<?php echo $_widget_class; ?> .embed-container {
+    .widget-<?php echo $_widget_class; ?> .widget-embed-container {
       display: flex;
       flex-direction: column;
       gap: var(--space-xl);
       max-width: var(--content-width-md);
       margin-inline: auto;
+      position: relative;
     }
 
     .widget-<?php echo $_widget_class; ?> .embed-code-wrapper {
       width: 100%;
+      position: relative;
     }
 
     .widget-<?php echo $_widget_class; ?> .embed-code-wrapper iframe {
       max-width: 100%;
+      display: block;
+      position: relative;
+      margin: 0 auto;
     }
   </style>
 
@@ -98,7 +103,7 @@ echo $_wdg_asset_html;
       </div>
       <?php endif; ?>
 
-      <div class="embed-container">
+      <div class="widget-embed-container">
         <div class="embed-code-wrapper reveal reveal-fade" role="region" aria-label="Embedded content">
           <?php echo $_embed_code; ?>
         </div>
@@ -106,3 +111,52 @@ echo $_wdg_asset_html;
     </div>
   </div>
 </section>
+
+<script>
+(function() {
+    // Center iframes within embed widget
+    function centerIframes() {
+        var container = document.querySelector('#<?php echo $_widget_id; ?> .embed-code-wrapper');
+        if (!container) return;
+        
+        var iframes = container.querySelectorAll('iframe');
+        iframes.forEach(function(iframe) {
+            // Remove any existing inline styles that might conflict
+            iframe.style.display = 'block';
+            iframe.style.margin = '0 auto';
+            iframe.style.position = 'relative';
+            
+            // Get container width and iframe width
+            var containerWidth = container.clientWidth;
+            var iframeWidth = iframe.offsetWidth;
+            
+            // Calculate left margin for centering
+            if (iframeWidth < containerWidth) {
+                var leftMargin = (containerWidth - iframeWidth) / 2;
+                iframe.style.marginLeft = leftMargin + 'px';
+                iframe.style.marginRight = 'auto';
+            } else {
+                iframe.style.marginLeft = '0';
+                iframe.style.marginRight = '0';
+            }
+        });
+    }
+    
+    // Run on load and on resize
+    window.addEventListener('load', centerIframes);
+    window.addEventListener('resize', function() {
+        setTimeout(centerIframes, 100);
+    });
+    
+    // Also run for dynamically loaded content
+    if (window.MutationObserver) {
+        var observer = new MutationObserver(function(mutations) {
+            centerIframes();
+        });
+        var container = document.querySelector('#<?php echo $_widget_id; ?>');
+        if (container) {
+            observer.observe(container, { childList: true, subtree: true });
+        }
+    }
+})();
+</script>

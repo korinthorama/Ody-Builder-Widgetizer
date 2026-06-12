@@ -9,13 +9,19 @@ $_pages = $db->getRecords($q);
 <style>
     .ody_builder_parameter { max-width: 500px !important; }
     .selectLink { border: 2px solid #002e3a !important; height: auto !important; padding: 2px 10px !important; font-size: .8em !important; background-color: #002e3a; color: white; max-width: 400px !important; width: 100% !important; margin: 2px 0 5px; }
-    .wdg-el-item { border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px; background: #f9f9f9; }
-    .wdg-el-item-header { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #002e3a; border-radius: 4px 4px 0 0; cursor: move; }
-    .wdg-el-item-header span { color: white; font-size: 12px; flex: 1; }
+    .wdg-el-item { border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px; background: #f9f9f9; transition: box-shadow 0.3s ease; }
+    .wdg-el-item-header { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #002e3a; border-radius: 4px 4px 0 0; }
+    .wdg-el-item-header span { color: white; font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wdg-el-item-body { padding: 8px; }
     .wdg-el-item-body .ody_builder_parameter { max-width: 450px !important; margin-bottom: 6px; }
     .wdg-el-add-btn { display: inline-block; padding: 6px 16px; background: #002e3a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; margin-top: 4px; }
     .wdg-el-add-btn:hover { background: #004a5c; }
+
+    /* ── Βελάκια μετακίνησης ── */
+    .wdg-el-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
+    .wdg-el-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
+    .wdg-el-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .wdg-el-move-btn:active { transform: scale(0.9); }
 </style>
 
 <!-- ══ ΓΕΝΙΚΑ ════════════════════════════════════════════════════════════════ -->
@@ -62,6 +68,54 @@ jQuery(function ($) {
     var _page_opts = <?php echo json_encode($_page_opts_html); ?>;
     var _item_idx = 0;
 
+    // ── Item display ──────────────────────────────────────────────────────────
+    function updateItemDisplay($item) {
+        var titleVal = $item.find('.wdg-el-title').val();
+        var itemNumber = $item.index() + 1;
+        var displayText = 'Event ' + itemNumber;
+        if (titleVal && titleVal.trim() !== '') {
+            displayText += ': ' + titleVal;
+        }
+        $item.find('.wdg-el-item-header span').text(displayText);
+    }
+
+    function renumberItems() {
+        $('#wdg_el_items .wdg-el-item').each(function () {
+            updateItemDisplay($(this));
+        });
+    }
+
+    // ── Move functions ────────────────────────────────────────────────────────
+    function moveItemUp($item) {
+        var $prev = $item.prev('.wdg-el-item');
+        if ($prev.length) {
+            $item.slideUp(1, function () {
+                $item.insertBefore($prev);
+                $item.slideDown(1, function () {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function () { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
+    function moveItemDown($item) {
+        var $next = $item.next('.wdg-el-item');
+        if ($next.length) {
+            $item.slideUp(1, function () {
+                $item.insertAfter($next);
+                $item.slideDown(1, function () {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function () { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
     function addItem(data) {
         data = data || {};
         var idx = _item_idx++;
@@ -70,7 +124,16 @@ jQuery(function ($) {
         var filePopupId = 'wdg_el_file_' + idx;
 
         var $item = $('<div class="wdg-el-item" data-idx="' + idx + '">');
-        $item.append('<div class="wdg-el-item-header"><span>Event ' + ($('#wdg_el_items .wdg-el-item').length + 1) + '</span><button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button></div>');
+        $item.append(
+            '<div class="wdg-el-item-header">' +
+            '<div class="wdg-el-move-buttons">' +
+            '<button type="button" class="wdg-el-move-btn wdg-el-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+            '<button type="button" class="wdg-el-move-btn wdg-el-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+            '</div>' +
+            '<span>Event ' + ($('#wdg_el_items .wdg-el-item').length + 1) + '</span>' +
+            '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
+            '</div>'
+        );
         var $body = $('<div class="wdg-el-item-body">');
 
         $body.append('<div class="ody_builder_parameter"><label><?php echo t("Μέρα"); ?></label><input type="number" class="listbox wdg-el-day" min="1" max="31" step="1" style="max-width:80px;" value="' + $('<div>').text(data.day||'1').html() + '"></div>');
@@ -108,21 +171,34 @@ jQuery(function ($) {
         if (data.btn_url) $('#' + urlId).val(data.btn_url);
         if (data.btn_new_tab == '1') $item.find('.wdg-el-btn-new-tab').prop('checked', true);
         $item.find('.wdg-el-btn-style').val(data.btn_style || 'widget-button-secondary');
-        $item.find('.wdg-item-remove').on('click', function() { $item.fadeOut(200, function() { $item.remove(); renumberItems(); }); });
-    }
 
-    function renumberItems() {
-        $('#wdg_el_items .wdg-el-item').each(function(idx) {
-            $(this).find('.wdg-el-item-header span').text('Event ' + (idx + 1));
+        // ── Real-time title update ────────────────────────────────────────────
+        $item.find('.wdg-el-title').on('input', function () {
+            updateItemDisplay($item);
         });
+
+        // ── Move buttons ──────────────────────────────────────────────────────
+        $item.find('.wdg-el-move-up').on('click', function (e) {
+            e.stopPropagation();
+            moveItemUp($item);
+        });
+        $item.find('.wdg-el-move-down').on('click', function (e) {
+            e.stopPropagation();
+            moveItemDown($item);
+        });
+
+        $item.find('.wdg-item-remove').on('click', function () {
+            $item.fadeOut(200, function () {
+                $item.remove();
+                renumberItems();
+            });
+        });
+
+        updateItemDisplay($item);
     }
 
     _items.forEach(function(item) { addItem(item); });
     $('#wdg_el_add_btn').on('click', function() { addItem({}); });
-
-    if ($.fn.sortable) {
-        $('#wdg_el_items').sortable({ handle: '.wdg-el-item-header', placeholder: 'block-placeholder', tolerance: 'pointer', stop: function() { renumberItems(); } });
-    }
 
     window.wdgElSetLink = function(val, targetId, idx) {
         if (!val || val === 'divider') return;

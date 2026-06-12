@@ -21,6 +21,7 @@
         border-radius: 4px;
         margin-bottom: 8px;
         background: #f9f9f9;
+        transition: box-shadow 0.3s ease;
     }
 
     .wdg-icg-item-header {
@@ -30,13 +31,15 @@
         padding: 6px 8px;
         background: #002e3a;
         border-radius: 4px 4px 0 0;
-        cursor: move;
     }
 
     .wdg-icg-item-header span {
         color: white;
         font-size: 12px;
         flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .wdg-icg-item-body {
@@ -62,6 +65,12 @@
         text-align: center;
         visibility: hidden;
     }
+
+    /* ── Βελάκια μετακίνησης ── */
+    .wdg-icg-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
+    .wdg-icg-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
+    .wdg-icg-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .wdg-icg-move-btn:active { transform: scale(0.9); }
 </style>
 <!-- ══ ΓΕΝΙΚΑ ════════════════════════════════════════════════════════════════ -->
 <div class="wdg-section-title"><?php echo t("Γενικά"); ?></div>
@@ -156,7 +165,6 @@
 </div>
 
 <?php
-// ── Page options για selectLink (static PHP — ίδιο pattern με action_bar) ────
 $q = "select pages.id as id, content_pages.title as title
       from pages, content_pages
       where content_pages.mainID=pages.id
@@ -197,144 +205,208 @@ $_icg_page_opts .= '<option value="fileLinks_icg">' . t("Link για αρχεί�
         $('#wdg_icg_icon_size').val(pval('icon_size', 'w-icon-lg'));
         $('#wdg_icg_icon_shape').val(pval('icon_shape', 'w-icon-circle'));
         $('#wdg_icg_btn_style').val(pval('btn_style', 'widget-button-secondary'));
-        // ── odyRecieveIcon callback ───────────────────────────────────────────────
+
+        // ── odyRecieveIcon callback ───────────────────────────────────────────
         window.odyRecieveIcon = function (icon_class, target_id) {
             $('#' + target_id).val(icon_class);
             var previewId = target_id.replace('wdg_icg_icon_', 'wdg_icg_icon_preview_');
             $('#' + previewId).removeClass().addClass('fa ' + icon_class).css('visibility', 'visible');
             parent.window.venobox.close();
         };
-        // ── Link picker helper — ίδιο pattern με action_bar ──────────────────────
+
+        // ── Link picker helper ────────────────────────────────────────────────
         window.wdgIcgSetLink = function (val, urlFieldId, idx) {
-            if(!val || val === 'divider') return;
-            if(val === 'nodeLinks_icg') {
+            if (!val || val === 'divider') return;
+            if (val === 'nodeLinks_icg') {
                 document.getElementById('wdg_icg_node_popup_' + idx).click();
                 return;
             }
-            if(val === 'fileLinks_icg') {
+            if (val === 'fileLinks_icg') {
                 document.getElementById('wdg_icg_file_popup_' + idx).click();
                 return;
             }
             var link = (val === 'homepage')
-                    ? 'index.php'
-                    : '««index.php?section=pages~|||~view=render~|||~id=' + val + '»»';
+                ? 'index.php'
+                : '««index.php?section=pages~|||~view=render~|||~id=' + val + '»»';
             $('#' + urlFieldId).val(link);
         };
 
-        // ── Add Card ──────────────────────────────────────────────────────────────
+        // ── Item display ──────────────────────────────────────────────────────
+        function updateItemDisplay($item) {
+            var titleVal = $item.find('.wdg-icg-title').val();
+            var itemNumber = $item.index() + 1;
+            var displayText = '<?php echo t("Card"); ?> ' + itemNumber;
+            if (titleVal && titleVal.trim() !== '') {
+                displayText += ': ' + titleVal;
+            }
+            $item.find('.wdg-icg-item-header span').text(displayText);
+        }
+
+        function renumberItems() {
+            $('#wdg_icg_items_list .wdg-icg-item').each(function () {
+                updateItemDisplay($(this));
+            });
+        }
+
+        // ── Move functions ────────────────────────────────────────────────────
+        function moveItemUp($item) {
+            var $prev = $item.prev('.wdg-icg-item');
+            if ($prev.length) {
+                $item.slideUp(1, function () {
+                    $item.insertBefore($prev);
+                    $item.slideDown(1, function () {
+                        renumberItems();
+                        $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                        $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                        setTimeout(function () { $item.css('box-shadow', ''); }, 100);
+                    });
+                });
+            }
+        }
+
+        function moveItemDown($item) {
+            var $next = $item.next('.wdg-icg-item');
+            if ($next.length) {
+                $item.slideUp(1, function () {
+                    $item.insertAfter($next);
+                    $item.slideDown(1, function () {
+                        renumberItems();
+                        $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                        $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                        setTimeout(function () { $item.css('box-shadow', ''); }, 100);
+                    });
+                });
+            }
+        }
+
+        // ── Add Card ──────────────────────────────────────────────────────────
         function addItem(data) {
             data = data || {};
             var idx = _item_idx++;
-            var iconFieldId = 'wdg_icg_icon_' + idx;
+            var iconFieldId  = 'wdg_icg_icon_' + idx;
             var iconPreviewId = 'wdg_icg_icon_preview_' + idx;
-            var iconPickerId = 'wdg_icg_icon_picker_' + idx;
-            var urlFieldId = 'wdg_icg_url_' + idx;
-            var nodePopupId = 'wdg_icg_node_popup_' + idx;
-            var filePopupId = 'wdg_icg_file_popup_' + idx;
+            var iconPickerId  = 'wdg_icg_icon_picker_' + idx;
+            var urlFieldId   = 'wdg_icg_url_' + idx;
+            var nodePopupId  = 'wdg_icg_node_popup_' + idx;
+            var filePopupId  = 'wdg_icg_file_popup_' + idx;
+
             var $item = $('<div class="wdg-icg-item" data-idx="' + idx + '">');
             $item.append(
-                    '<div class="wdg-icg-item-header">' +
-                    '<span><?php echo t("Card"); ?> ' + ($('#wdg_icg_items_list .wdg-icg-item').length + 1) + '</span>' +
-                    '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
-                    '</div>'
+                '<div class="wdg-icg-item-header">' +
+                '<div class="wdg-icg-move-buttons">' +
+                '<button type="button" class="wdg-icg-move-btn wdg-icg-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+                '<button type="button" class="wdg-icg-move-btn wdg-icg-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+                '</div>' +
+                '<span><?php echo t("Card"); ?> ' + ($('#wdg_icg_items_list .wdg-icg-item').length + 1) + '</span>' +
+                '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
+                '</div>'
             );
             var $body = $('<div class="wdg-icg-item-body">');
+
             // Icon picker
             $body.append(
-                    '<div class="ody_builder_parameter"><label><?php echo t("Εικονίδιο"); ?></label>' +
-                    '<div class="wdg-icg-icon-row">' +
-                    '<i id="' + iconPreviewId + '" class="fa wdg-icg-icon-preview" style="font-size: 30px; color: #002e3a;"></i>' +
-                    '<a href="<?php echo array_search($block_type, $blocks); ?>-<?php echo $block_type; ?>/widgets/icon_card_grid/icons.php?venobox=[id]' + iconFieldId + '"' +
-                    ' id="' + iconPickerId + '" class="wdg-icg-icon-picker ody_builder_content_action btn btn-success" data-vbtype="iframe">' +
-                    '<?php echo t("Επιλογή εικονιδίου"); ?></a>' +
-                    '</div>' +
-                    '<input type="hidden" id="' + iconFieldId + '" class="wdg-icg-icon-class" value="">' +
-                    '</div>'
+                '<div class="ody_builder_parameter"><label><?php echo t("Εικονίδιο"); ?></label>' +
+                '<div class="wdg-icg-icon-row">' +
+                '<i id="' + iconPreviewId + '" class="fa wdg-icg-icon-preview" style="font-size: 30px; color: #002e3a;"></i>' +
+                '<a href="<?php echo array_search($block_type, $blocks); ?>-<?php echo $block_type; ?>/widgets/icon_card_grid/icons.php?venobox=[id]' + iconFieldId + '"' +
+                ' id="' + iconPickerId + '" class="wdg-icg-icon-picker ody_builder_content_action btn btn-success" data-vbtype="iframe">' +
+                '<?php echo t("Επιλογή εικονιδίου"); ?></a>' +
+                '</div>' +
+                '<input type="hidden" id="' + iconFieldId + '" class="wdg-icg-icon-class" value="">' +
+                '</div>'
             );
             // Subtitle
             $body.append(
-                    '<div class="ody_builder_parameter"><label><?php echo t("Υπότιτλος"); ?></label>' +
-                    '<input type="text" class="listbox wdg-icg-subtitle" value="' + $('<div>').text(data.subtitle || '').html() + '"></div>'
+                '<div class="ody_builder_parameter"><label><?php echo t("Υπότιτλος"); ?></label>' +
+                '<input type="text" class="listbox wdg-icg-subtitle" value="' + $('<div>').text(data.subtitle || '').html() + '"></div>'
             );
             // Title
             $body.append(
-                    '<div class="ody_builder_parameter"><label><?php echo t("Τίτλος"); ?></label>' +
-                    '<input type="text" class="listbox wdg-icg-title" value="' + $('<div>').text(data.title || '').html() + '"></div>'
+                '<div class="ody_builder_parameter"><label><?php echo t("Τίτλος"); ?></label>' +
+                '<input type="text" class="listbox wdg-icg-title" value="' + $('<div>').text(data.title || '').html() + '"></div>'
             );
             // Description
             $body.append(
-                    '<div class="ody_builder_parameter"><label><?php echo t("Περιγραφή"); ?></label>' +
-                    '<textarea class="listbox wdg-icg-description" rows="2" style="resize:vertical;">' + $('<div>').text(data.description || '').html() + '</textarea></div>'
+                '<div class="ody_builder_parameter"><label><?php echo t("Περιγραφή"); ?></label>' +
+                '<textarea class="listbox wdg-icg-description" rows="2" style="resize:vertical;">' + $('<div>').text(data.description || '').html() + '</textarea></div>'
             );
             // Button label
             $body.append(
-                    '<div class="ody_builder_parameter"><label><?php echo t("Ετικέτα κουμπιού (κενό = χωρίς κουμπί)"); ?></label>' +
-                    '<input type="text" class="listbox wdg-icg-btn-label" value="' + $('<div>').text(data.btn_label || '').html() + '"></div>'
+                '<div class="ody_builder_parameter"><label><?php echo t("Ετικέτα κουμπιού (κενό = χωρίς κουμπί)"); ?></label>' +
+                '<input type="text" class="listbox wdg-icg-btn-label" value="' + $('<div>').text(data.btn_label || '').html() + '"></div>'
             );
             // Button URL + selectLink
             $body.append(
-                    '<div class="ody_builder_parameter"><label>Link</label>' +
-                    '<input type="text" class="listbox wdg-icg-btn-url" id="' + urlFieldId + '" value="' + $('<div>').text(data.btn_url || '').html() + '">' +
-                    '<select class="selectLink listbox" onchange="wdgIcgSetLink($(this).val(), \'' + urlFieldId + '\', ' + idx + '); $(this).val(\'\');">' +
-                    _page_opts +
-                    '</select>' +
-                    '</div>'
+                '<div class="ody_builder_parameter"><label>Link</label>' +
+                '<input type="text" class="listbox wdg-icg-btn-url" id="' + urlFieldId + '" value="' + $('<div>').text(data.btn_url || '').html() + '">' +
+                '<select class="selectLink listbox" onchange="wdgIcgSetLink($(this).val(), \'' + urlFieldId + '\', ' + idx + '); $(this).val(\'\');">' +
+                _page_opts +
+                '</select>' +
+                '</div>'
             );
             // New tab checkbox
             $body.append(
-                    '<div class="ody_builder_parameter">' +
-                    '<div class="admin_checkbox_wrapper" style="margin: 0 0 10px;">' +
-                    '<input type="checkbox" class="wdg-icg-btn-newtab" id="wdg_icg_newtab_' + idx + '" value="1">' +
-                    '<p><?php echo t("Άνοιγμα σε νέο tab"); ?></p>' +
-                    '</div></div>'
+                '<div class="ody_builder_parameter">' +
+                '<div class="admin_checkbox_wrapper" style="margin: 0 0 10px;">' +
+                '<input type="checkbox" class="wdg-icg-btn-newtab" id="wdg_icg_newtab_' + idx + '" value="1">' +
+                '<p><?php echo t("Άνοιγμα σε νέο tab"); ?></p>' +
+                '</div></div>'
             );
             $item.append($body);
             $('#wdg_icg_items_list').append($item);
-            // Hidden node/file popup anchors για αυτό το card
+
+            // Hidden node/file popup anchors
             $('#wdg_icg_popups_container').append(
-                    '<a id="' + nodePopupId + '" class="builder_popup" data-vbtype="iframe"' +
-                    ' href="section_links.php?venobox=[id]' + urlFieldId + '">iFrame</a>' +
-                    '<a id="' + filePopupId + '" class="builder_popup" data-vbtype="iframe"' +
-                    ' href="file_links.php?venobox=[id]' + urlFieldId + '">iFrame</a>'
+                '<a id="' + nodePopupId + '" class="builder_popup" data-vbtype="iframe"' +
+                ' href="section_links.php?venobox=[id]' + urlFieldId + '">iFrame</a>' +
+                '<a id="' + filePopupId + '" class="builder_popup" data-vbtype="iframe"' +
+                ' href="file_links.php?venobox=[id]' + urlFieldId + '">iFrame</a>'
             );
             new VenoBox({selector: '#' + nodePopupId, fitView: true, ratio: 'full'});
             new VenoBox({selector: '#' + filePopupId, fitView: true, ratio: 'full'});
-            // VenoBox για icon picker
             window.venobox = new VenoBox({selector: '#' + iconPickerId, fitView: true, ratio: 'full'});
+
             // Φόρτωση αποθηκευμένων τιμών
-            if(data.icon_class) {
+            if (data.icon_class) {
                 $('#' + iconFieldId).val(data.icon_class);
                 $('#' + iconPreviewId).removeClass().addClass('fa ' + data.icon_class).css('visibility', 'visible');
             }
-            if(data.btn_new_tab == '1') {
+            if (data.btn_new_tab == '1') {
                 $('#wdg_icg_newtab_' + idx).prop('checked', true);
             }
+
+            // ── Real-time title update ────────────────────────────────────────
+            $item.find('.wdg-icg-title').on('input', function () {
+                updateItemDisplay($item);
+            });
+
+            // ── Move buttons ──────────────────────────────────────────────────
+            $item.find('.wdg-icg-move-up').on('click', function (e) {
+                e.stopPropagation();
+                moveItemUp($item);
+            });
+            $item.find('.wdg-icg-move-down').on('click', function (e) {
+                e.stopPropagation();
+                moveItemDown($item);
+            });
+
             $item.find('.wdg-item-remove').on('click', function () {
                 $item.fadeOut(200, function () {
                     $item.remove();
                     renumberItems();
                 });
             });
-            if($.fn.sortable) {
-                $('#wdg_icg_items_list').sortable({handle: '.wdg-icg-item-header', placeholder: 'block-placeholder', tolerance: 'pointer', stop: function() { renumberItems(); }});
-            }
+
+            updateItemDisplay($item);
         }
 
-        function renumberItems() {
-            $('#wdg_icg_items_list .wdg-icg-item').each(function(idx) {
-                $(this).find('.wdg-icg-item-header span').text('<?php echo t("Card"); ?> ' + (idx + 1));
-            });
-        }
+        _items.forEach(function (item) { addItem(item); });
+        $('#wdg_icg_add_btn').on('click', function () { addItem({}); });
 
-        _items.forEach(function (item) {
-            addItem(item);
-        });
-        $('#wdg_icg_add_btn').on('click', function () {
-            addItem({});
-        });
         label = 'Widget Icon Card Grid';
         $('#ody_builder_admin_label').val(label);
         $('.ody_builder_header h2').html('Widgetizer — Icon Card Grid');
+
         window.get_block_data = function () {
             var items = [];
             $('#wdg_icg_items_list .wdg-icg-item').each(function () {
@@ -352,7 +424,7 @@ $_icg_page_opts .= '<option value="fileLinks_icg">' . t("Link για αρχεί�
             });
             return {
                 widget_id: 'icon_card_grid',
-                params:    {
+                params: {
                     eyebrow:         $('#wdg_icg_eyebrow').val(),
                     title:           $('#wdg_icg_title').val(),
                     description:     $('#wdg_icg_description').val(),

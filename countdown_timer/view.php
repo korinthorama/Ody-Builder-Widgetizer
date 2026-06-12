@@ -65,8 +65,29 @@ $_pages = $db->getRecords($q);
         <option value="left"><?php echo t("Αριστερά"); ?></option>
     </select>
 </div>
+<!-- ══ ΕΜΦΑΝΙΣΗ ══════════════════════════════════════════════════════════════ -->
+<div class="wdg-section-title"><?php echo t("Εμφάνιση"); ?></div>
+<div class="ody_builder_parameter">
+    <label for="wdg_cd_color_scheme"><?php echo t("Κύρια χρωματική παλέτα"); ?></label>
+    <select id="wdg_cd_color_scheme" class="listbox">
+        <option value="color-scheme-standard-primary">Standard Primary</option>
+        <option value="color-scheme-standard-secondary">Standard Secondary</option>
+        <option value="color-scheme-highlight-primary">Highlight Primary</option>
+        <option value="color-scheme-highlight-secondary">Highlight Secondary</option>
+    </select>
+</div>
+<div class="ody_builder_parameter">
+    <label for="wdg_cd_container_width"><?php echo t("Πλάτος Container"); ?></label>
+    <select id="wdg_cd_container_width" class="listbox">
+        <option value="full">Full Width</option>
+        <option value="xl">X-Large (1420px)</option>
+        <option value="lg">Large (1200px)</option>
+        <option value="md">Medium (960px)</option>
+        <option value="sm">Small (760px)</option>
+    </select>
+</div>
 <!-- ══ COUNTDOWN ═════════════════════════════════════════════════════════════ -->
-<div class="wdg-section-title">⏱️<?php echo t("Αντίστροφη μέτρηση");?></div>
+<div class="wdg-section-title">⏱️<?php echo t("Αντίστροφη μέτρηση"); ?></div>
 <div class="ody_builder_parameter">
     <label for="wdg_cd_target"><?php echo t("Ημερομηνία Στόχος"); ?></label>
     <input type="text" id="wdg_cd_target" class="listbox" placeholder="DD/MM/YYYY HH:MM">
@@ -84,8 +105,8 @@ $_pages = $db->getRecords($q);
 <div class="ody_builder_parameter">
     <label for="wdg_cd_style"><?php echo t("Τύπος εμφάνισης"); ?></label>
     <select id="wdg_cd_style" class="listbox">
-        <option value="cards"><?php echo t("με πλαίσια");?></option>
-        <option value="minimal"><?php echo t("χωρίς πλαίσια");?></option>
+        <option value="cards"><?php echo t("με πλαίσια"); ?></option>
+        <option value="minimal"><?php echo t("χωρίς πλαίσια"); ?></option>
     </select>
 </div>
 <div class="ody_builder_parameter">
@@ -118,27 +139,6 @@ $_pages = $db->getRecords($q);
         <input type="checkbox" id="wdg_cd_btn_new_tab" value="1">
         <p><?php echo t("Άνοιγμα σε νέο tab"); ?></p>
     </div>
-</div>
-<!-- ══ ΕΜΦΑΝΙΣΗ ══════════════════════════════════════════════════════════════ -->
-<div class="wdg-section-title"><?php echo t("Εμφάνιση"); ?></div>
-<div class="ody_builder_parameter">
-    <label for="wdg_cd_color_scheme"><?php echo t("Κύρια χρωματική παλέτα"); ?></label>
-    <select id="wdg_cd_color_scheme" class="listbox">
-        <option value="color-scheme-standard-primary">Standard Primary</option>
-        <option value="color-scheme-standard-secondary">Standard Secondary</option>
-        <option value="color-scheme-highlight-primary">Highlight Primary</option>
-        <option value="color-scheme-highlight-secondary">Highlight Secondary</option>
-    </select>
-</div>
-<div class="ody_builder_parameter">
-    <label for="wdg_cd_container_width"><?php echo t("Πλάτος Container"); ?></label>
-    <select id="wdg_cd_container_width" class="listbox">
-        <option value="full">Full Width</option>
-        <option value="xl">X-Large (1420px)</option>
-        <option value="lg">Large (1200px)</option>
-        <option value="md">Medium (960px)</option>
-        <option value="sm">Small (760px)</option>
-    </select>
 </div>
 <!-- Hidden link pickers -->
 <a id="wdg_cd_node_popup" class="builder_popup" data-vbtype="iframe" href="section_links.php?venobox=[id]wdg_cd_btn_url">iFrame</a>

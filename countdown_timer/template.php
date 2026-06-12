@@ -44,7 +44,7 @@ $_widget_id    = 'widget_' . $blockID;
 $_widget_class = 'widget_' . $blockID;
 $_align_class  = ($_header_align === 'left') ? ' widget-heading-align-left' : '';
 
-$_section_style = 'padding-bottom: 20px;';
+$_section_style = 'padding: 20px;';
 if (!$_full_width && $_max_width) $_section_style .= ' max-width: ' . $_max_width . '; margin-inline: auto;';
 
 // ── Widget header ─────────────────────────────────────────────────────────────
@@ -69,6 +69,24 @@ foreach ($_units as $_unit => $_label) {
     $_units_html .= '</div>';
 }
 
+// ── Extra elements (text & button) with IDs for hiding on expiry ─────────────
+$_countdown_text_id = 'countdown_text_' . $blockID;
+$_button_id = 'countdown_button_' . $blockID;
+
+$_countdown_text_html = '';
+if ($_countdown_text !== '') {
+    $_countdown_text_html = '<div id="' . $_countdown_text_id . '" class="countdown-text w-body w-rte t-base reveal reveal-up">';
+    $_countdown_text_html .= '<p>' . $_countdown_text . '</p>';
+    $_countdown_text_html .= '</div>';
+}
+
+$_button_html = '';
+if ($_btn_label !== '') {
+    $_button_html = '<div id="' . $_button_id . '" class="countdown-button">';
+    $_button_html .= '<a href="' . $_btn_url . '" class="widget-button" data-setting="button"' . $_btn_new_tab . '>' . $_btn_label . '</a>';
+    $_button_html .= '</div>';
+}
+
 // ── Script ───────────────────────────────────────────────────────────────────
 $_script = <<<JSEOF
 <script>
@@ -82,22 +100,42 @@ document.addEventListener("DOMContentLoaded", function () {
 
   var targetDate   = new Date(timer.dataset.target).getTime();
   var expiredMsg   = timer.dataset.expiredMessage || "";
+  var countdownText = document.getElementById("{$_countdown_text_id}");
+  var countdownButton = document.getElementById("{$_button_id}");
+
+  function hideExtraElements() {
+    if (countdownText) countdownText.style.display = "none";
+    if (countdownButton) countdownButton.style.display = "none";
+  }
+
+  function showExtraElements() {
+    if (countdownText) countdownText.style.display = "";
+    if (countdownButton) countdownButton.style.display = "";
+  }
 
   function update() {
     var now      = Date.now();
     var distance = targetDate - now;
+    
     if (distance < 0) {
       timer.innerHTML = '<div class="countdown-expired w-body t-2xl t-accent">' + expiredMsg + '</div>';
+      hideExtraElements();
       return;
     }
+    
+    // Αν δεν έχει λήξει, εμφάνισε τα στοιχεία (σε περίπτωση που είχαν κρυφτεί από προηγούμενο update)
+    showExtraElements();
+    
     var days    = Math.floor(distance / 86400000);
     var hours   = Math.floor((distance % 86400000) / 3600000);
     var minutes = Math.floor((distance % 3600000) / 60000);
     var seconds = Math.floor((distance % 60000) / 1000);
+    
     var daysEl    = timer.querySelector('[data-unit="days"]');
     var hoursEl   = timer.querySelector('[data-unit="hours"]');
     var minutesEl = timer.querySelector('[data-unit="minutes"]');
     var secondsEl = timer.querySelector('[data-unit="seconds"]');
+    
     if (daysEl)    daysEl.textContent    = String(days).padStart(2, "0");
     if (hoursEl)   hoursEl.textContent   = String(hours).padStart(2, "0");
     if (minutesEl) minutesEl.textContent = String(minutes).padStart(2, "0");
@@ -181,17 +219,8 @@ echo $_wdg_asset_html;
           <?php echo $_units_html; ?>
         </div>
 
-        <?php if ($_countdown_text !== ''): ?>
-        <div class="countdown-text w-body w-rte t-base reveal reveal-up">
-          <p><?php echo $_countdown_text; ?></p>
-        </div>
-        <?php endif; ?>
-
-        <?php if ($_btn_label !== ''): ?>
-        <div class="countdown-button">
-          <a href="<?php echo $_btn_url; ?>" class="widget-button" data-setting="button"<?php echo $_btn_new_tab; ?>><?php echo $_btn_label; ?></a>
-        </div>
-        <?php endif; ?>
+        <?php echo $_countdown_text_html; ?>
+        <?php echo $_button_html; ?>
       </div>
     </div>
   </div>
