@@ -61,7 +61,7 @@ $_arrow_svg = '<svg viewBox="0 0 24 24" fill="none">'
 
 <section
     id="<?php echo $_widget_id; ?>"
-    class="widget widget-numbered-service-list widget-<?php echo $_widget_id; ?> <?php echo $_color; ?>"
+    class="widget widget-numbered-service-list widget-<?php echo $_widget_id; ?> <?php echo $_color; ?> no_collapse"
     data-widget-id="<?php echo $_widget_id; ?>"
     data-widget-type="numbered-service-list"
     style="<?php echo $_section_style; ?>"

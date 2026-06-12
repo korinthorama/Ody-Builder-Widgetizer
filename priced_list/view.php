@@ -2,15 +2,21 @@
 
 <style>
     .ody_builder_parameter { max-width: 500px !important; }
-    .wdg-prl-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 6px; background: #f0f4f4; }
-    .wdg-prl-item-header { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #002e3a; border-radius: 4px 4px 0 0; cursor: move; }
-    .wdg-prl-item-header span { color: white; font-size: 11px; flex: 1; }
+    .wdg-prl-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 6px; background: #f0f4f4; transition: box-shadow 0.3s ease; }
+    .wdg-prl-item-header { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #002e3a; border-radius: 4px 4px 0 0; }
+    .wdg-prl-item-header span { color: white; font-size: 11px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wdg-prl-item-body { padding: 8px; }
     .wdg-prl-item-body .ody_builder_parameter { max-width: 100% !important; margin-bottom: 5px; }
     .wdg-img-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .wdg-img-filename { font-size: 12px; color: #999; font-style: italic; word-break: break-all; flex: 1; }
     .wdg-img-preview { max-height: 40px; max-width: 100px; margin-top: 4px; border-radius: 3px; display: none; border: 1px solid #ddd; }
     #wdg_prl_items_container { max-width: 680px !important; }
+
+    /* ── Βελάκια μετακίνησης ── */
+    .wdg-prl-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
+    .wdg-prl-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
+    .wdg-prl-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .wdg-prl-move-btn:active { transform: scale(0.9); }
 </style>
 
 <!-- ══ ΓΕΝΙΚΑ ═══════════════════════════════════════════════════════════════ -->
@@ -85,7 +91,7 @@ jQuery(function ($) {
         return (_p[key] !== undefined && _p[key] !== '') ? _p[key] : (def !== undefined ? def : '');
     }
 
-    // ── Restore scalars ────────────────────────────────────────────────────────
+    // ── Restore scalars ───────────────────────────────────────────────────────
     $('#wdg_prl_eyebrow').val(pval('eyebrow'));
     $('#wdg_prl_title').val(pval('title'));
     $('#wdg_prl_description').val(pval('description'));
@@ -94,7 +100,7 @@ jQuery(function ($) {
     $('#wdg_prl_alignment').val(pval('alignment', 'center'));
     $('#wdg_prl_layout').val(pval('layout', 'two-column'));
 
-    // ── odyRecieveMediabank ────────────────────────────────────────────────────
+    // ── odyRecieveMediabank ───────────────────────────────────────────────────
     window.odyRecieveMediabank = function(file, id, ext, image_path, callerEl) {
         var targetId = $(callerEl || window._wdg_mediabank_caller).data('wdg-target');
         if (!targetId) return;
@@ -108,19 +114,77 @@ jQuery(function ($) {
         $('#' + targetId + '_remove').css('visibility', 'visible');
     };
 
+    // ── Item display ──────────────────────────────────────────────────────────
+    function updateItemDisplay($item, nameId) {
+        var nameVal = $('#' + nameId).val();
+        var itemNumber = $item.index() + 1;
+        var displayText = 'Item ' + itemNumber;
+        if (nameVal && nameVal.trim() !== '') {
+            displayText += ': ' + nameVal;
+        }
+        $item.find('.wdg-prl-item-header span').text(displayText);
+    }
+
+    function renumberItems() {
+        $('#wdg_prl_items_list .wdg-prl-item').each(function() {
+            var $it = $(this);
+            var ii  = $it.data('ii');
+            var nameId = 'wdg_prl_name_prl_' + ii;
+            updateItemDisplay($it, nameId);
+        });
+    }
+
+    // ── Move functions ────────────────────────────────────────────────────────
+    function moveItemUp($item, nameId) {
+        var $prev = $item.prev('.wdg-prl-item');
+        if ($prev.length) {
+            $item.slideUp(1, function() {
+                $item.insertBefore($prev);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
+    function moveItemDown($item, nameId) {
+        var $next = $item.next('.wdg-prl-item');
+        if ($next.length) {
+            $item.slideUp(1, function() {
+                $item.insertAfter($next);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
     // ── Add Item ──────────────────────────────────────────────────────────────
     function addItem(itemData) {
         itemData = itemData || {};
         var ii      = _item_idx++;
         var uid     = 'prl_' + ii;
-        var imgId   = 'wdg_prl_img_' + uid;
+        var nameId  = 'wdg_prl_name_'  + uid;
+        var descId  = 'wdg_prl_desc_'  + uid;
+        var priceId = 'wdg_prl_price_' + uid;
+        var imgId   = 'wdg_prl_img_'   + uid;
         var mediaId = 'wdg_prl_media_' + uid;
 
         var $item = $('<div class="wdg-prl-item" data-ii="' + ii + '">');
         $item.append(
             '<div class="wdg-prl-item-header">' +
-                '<span>Item ' + ($('#wdg_prl_items_list .wdg-prl-item').length + 1) + '</span>' +
-                '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
+            '<div class="wdg-prl-move-buttons">' +
+            '<button type="button" class="wdg-prl-move-btn wdg-prl-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+            '<button type="button" class="wdg-prl-move-btn wdg-prl-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+            '</div>' +
+            '<span>Item ' + ($('#wdg_prl_items_list .wdg-prl-item').length + 1) + '</span>' +
+            '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
             '</div>'
         );
 
@@ -129,19 +193,19 @@ jQuery(function ($) {
         // Name
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Όνομα"); ?></label>' +
-            '<input type="text" id="wdg_prl_name_' + uid + '" class="listbox" value="' + $('<div>').text(itemData.name || '').html() + '"></div>'
+            '<input type="text" id="' + nameId + '" class="listbox" value="' + $('<div>').text(itemData.name || '').html() + '"></div>'
         );
 
         // Description
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Περιγραφή"); ?></label>' +
-            '<textarea id="wdg_prl_desc_' + uid + '" class="listbox" rows="2" style="width:100%; box-sizing:border-box;">' + $('<div>').text(itemData.description || '').html() + '</textarea></div>'
+            '<textarea id="' + descId + '" class="listbox" rows="2" style="width:100%; box-sizing:border-box;">' + $('<div>').text(itemData.description || '').html() + '</textarea></div>'
         );
 
         // Price
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Τιμή"); ?></label>' +
-            '<input type="text" id="wdg_prl_price_' + uid + '" class="listbox" value="' + $('<div>').text(itemData.price || '').html() + '"></div>'
+            '<input type="text" id="' + priceId + '" class="listbox" value="' + $('<div>').text(itemData.price || '').html() + '"></div>'
         );
 
         // Image picker
@@ -164,7 +228,7 @@ jQuery(function ($) {
         $item.append($body);
         $('#wdg_prl_items_list').append($item);
 
-        // Shared class VenoBox pattern (όπως gallery)
+        // Shared class VenoBox pattern
         window.venobox = new VenoBox({ selector: '.wdg-prl-select-media', fitView: true, ratio: 'full' });
         $('.wdg-prl-select-media').off('click').on('click', function() { window._wdg_mediabank_caller = this; });
 
@@ -189,28 +253,33 @@ jQuery(function ($) {
             $('#' + imgId + '_remove').css('visibility', 'visible');
         }
 
-        $item.find('.wdg-item-remove').on('click', function () {
-            $item.fadeOut(200, function () { $item.remove(); renumberItems(); });
+        // ── Real-time name update ─────────────────────────────────────────────
+        $('#' + nameId).on('input', function() {
+            updateItemDisplay($item, nameId);
         });
 
-        if ($.fn.sortable) {
-            $('#wdg_prl_items_list').sortable({
-                handle: '.wdg-prl-item-header',
-                placeholder: 'block-placeholder',
-                tolerance: 'pointer',
-                stop: function () { renumberItems(); }
+        // ── Move buttons ──────────────────────────────────────────────────────
+        $item.find('.wdg-prl-move-up').on('click', function(e) {
+            e.stopPropagation();
+            moveItemUp($item, nameId);
+        });
+        $item.find('.wdg-prl-move-down').on('click', function(e) {
+            e.stopPropagation();
+            moveItemDown($item, nameId);
+        });
+
+        $item.find('.wdg-item-remove').on('click', function() {
+            $item.fadeOut(200, function() {
+                $item.remove();
+                renumberItems();
             });
-        }
-    }
-
-    function renumberItems() {
-        $('#wdg_prl_items_list .wdg-prl-item').each(function (idx) {
-            $(this).find('.wdg-prl-item-header span').text('Item ' + (idx + 1));
         });
+
+        updateItemDisplay($item, nameId);
     }
 
-    _items.forEach(function (item) { addItem(item); });
-    $('#wdg_prl_add_item_btn').on('click', function () { addItem({}); });
+    _items.forEach(function(item) { addItem(item); });
+    $('#wdg_prl_add_item_btn').on('click', function() { addItem({}); });
 
     // ── GLightbox για preview στον editor ─────────────────────────────────────
     if (typeof GLightbox !== 'undefined') {
@@ -223,9 +292,9 @@ jQuery(function ($) {
     $('.ody_builder_header h2').html('Widgetizer — Priced List');
 
     // ── get_block_data ────────────────────────────────────────────────────────
-    window.get_block_data = function () {
+    window.get_block_data = function() {
         var items = [];
-        $('#wdg_prl_items_list .wdg-prl-item').each(function () {
+        $('#wdg_prl_items_list .wdg-prl-item').each(function() {
             var ii  = $(this).data('ii');
             var uid = 'prl_' + ii;
             items.push({

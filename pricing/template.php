@@ -45,7 +45,7 @@ $_check_svg = '<svg class="icon feature-icon-svg" xmlns="http://www.w3.org/2000/
 
 <section
     id="<?php echo $_widget_id; ?>"
-    class="widget widget-type-pricing widget-<?php echo $_widget_id; ?> <?php echo $_color; ?>"
+    class="widget widget-type-pricing widget-<?php echo $_widget_id; ?> <?php echo $_color; ?> no_collapse"
     data-widget-id="<?php echo $_widget_id; ?>"
     data-widget-type="pricing"
     style="<?php echo $_section_style; ?>"

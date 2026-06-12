@@ -11,11 +11,17 @@
         max-width: 400px !important; width: 100% !important; margin: 2px 0 5px;
     }
     /* Tab items */
-    .wdg-imtb-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px; background: #f9f9f9; }
-    .wdg-imtb-item-header { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #002e3a; border-radius: 4px 4px 0 0; cursor: move; }
-    .wdg-imtb-item-header span { color: white; font-size: 12px; flex: 1; }
+    .wdg-imtb-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px; background: #f9f9f9; transition: box-shadow 0.3s ease; }
+    .wdg-imtb-item-header { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #002e3a; border-radius: 4px 4px 0 0; }
+    .wdg-imtb-item-header span { color: white; font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wdg-imtb-item-body { padding: 8px; }
     .wdg-imtb-item-body .ody_builder_parameter { max-width: 100% !important; margin-bottom: 6px; }
+
+    /* ── Βελάκια μετακίνησης ── */
+    .wdg-imtb-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
+    .wdg-imtb-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
+    .wdg-imtb-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .wdg-imtb-move-btn:active { transform: scale(0.9); }
 </style>
 
 <!-- ══ ΓΕΝΙΚΑ ════════════════════════════════════════════════════════════════ -->
@@ -103,7 +109,7 @@ jQuery(function ($) {
     $('#wdg_imtb_color_scheme').val(pval('color_scheme', 'color-scheme-standard-primary'));
     $('#wdg_imtb_container_width').val(pval('container_width', 'xl'));
 
-    // ── odyRecieveMediabank — csw pattern ─────────────────────────────────────
+    // ── odyRecieveMediabank ───────────────────────────────────────────────────
     window.venobox = new VenoBox({selector: '.ody_builder_select_media', fitView: true, ratio: 'full'});
     $('.ody_builder_select_media').on('click', function() { window._wdg_mediabank_caller = this; });
 
@@ -132,16 +138,70 @@ jQuery(function ($) {
         $('#wdg_imtb_tabs').val(JSON.stringify(items));
     }
 
+    // ── Item display ──────────────────────────────────────────────────────────
+    function updateItemDisplay($item) {
+        var titleVal = $item.find('.wdg-imtb-title').val();
+        var itemNumber = $item.index() + 1;
+        var displayText = '<?php echo t("Tab"); ?> ' + itemNumber;
+        if (titleVal && titleVal.trim() !== '') {
+            displayText += ': ' + titleVal;
+        }
+        $item.find('.wdg-imtb-item-header span').text(displayText);
+    }
+
+    function renumberItems() {
+        $('#wdg_imtb_tabs_list .wdg-imtb-item').each(function() {
+            updateItemDisplay($(this));
+        });
+    }
+
+    // ── Move functions ────────────────────────────────────────────────────────
+    function moveItemUp($item) {
+        var $prev = $item.prev('.wdg-imtb-item');
+        if ($prev.length) {
+            $item.slideUp(1, function() {
+                $item.insertBefore($prev);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    saveTabs();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
+    function moveItemDown($item) {
+        var $next = $item.next('.wdg-imtb-item');
+        if ($next.length) {
+            $item.slideUp(1, function() {
+                $item.insertAfter($next);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    saveTabs();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
     // ── Add Tab ───────────────────────────────────────────────────────────────
     function addItem(data) {
         data = data || {};
-        var idx    = _item_idx++;
-        var imgId  = 'wdg_imtb_img_' + idx;
+        var idx     = _item_idx++;
+        var imgId   = 'wdg_imtb_img_' + idx;
         var mediaId = 'wdg_imtb_media_' + idx;
 
         var $item = $('<div class="wdg-imtb-item" data-idx="' + idx + '">');
         $item.append(
             '<div class="wdg-imtb-item-header">' +
+            '<div class="wdg-imtb-move-buttons">' +
+            '<button type="button" class="wdg-imtb-move-btn wdg-imtb-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+            '<button type="button" class="wdg-imtb-move-btn wdg-imtb-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+            '</div>' +
             '<span>Tab ' + ($('#wdg_imtb_tabs_list .wdg-imtb-item').length + 1) + '</span>' +
             '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
             '</div>'
@@ -154,13 +214,11 @@ jQuery(function ($) {
             '<div class="ody_builder_parameter"><label><?php echo t("Τίτλος"); ?></label>' +
             '<input type="text" class="listbox wdg-imtb-title" value="' + $('<div>').text(data.title || '').html() + '"></div>'
         );
-
         // Description
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Περιγραφή"); ?></label>' +
             '<textarea class="listbox wdg-imtb-desc" rows="2" style="resize:vertical;">' + $('<div>').text(data.description || '').html() + '</textarea></div>'
         );
-
         // Image picker
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Εικόνα"); ?></label>' +
@@ -183,7 +241,7 @@ jQuery(function ($) {
         new VenoBox({ selector: '#' + mediaId, fitView: true, ratio: 'full' });
         $('#' + mediaId).on('click', function() { window._wdg_mediabank_caller = this; });
 
-        // Remove button
+        // Remove image button
         $('#' + imgId + '_remove').on('click', function() {
             $('#' + imgId).val('');
             $('#' + imgId + '_display').text('<?php echo t("Επιλέξτε..."); ?>');
@@ -200,26 +258,32 @@ jQuery(function ($) {
             $('#' + imgId + '_remove').css('visibility', 'visible');
         }
 
+        // ── Real-time title update ────────────────────────────────────────────
+        $item.find('.wdg-imtb-title').on('input', function() {
+            updateItemDisplay($item);
+        });
+
+        // ── Move buttons ──────────────────────────────────────────────────────
+        $item.find('.wdg-imtb-move-up').on('click', function(e) {
+            e.stopPropagation();
+            moveItemUp($item);
+        });
+        $item.find('.wdg-imtb-move-down').on('click', function(e) {
+            e.stopPropagation();
+            moveItemDown($item);
+        });
+
         $item.find('.wdg-item-remove').on('click', function() {
-            $item.fadeOut(200, function() { $item.remove(); renumberItems(); saveTabs(); });
+            $item.fadeOut(200, function() {
+                $item.remove();
+                renumberItems();
+                saveTabs();
+            });
         });
 
         $item.find('input:not(.wdg-imtb-img), textarea').on('input change', function() { saveTabs(); });
 
-        if ($.fn.sortable) {
-            $('#wdg_imtb_tabs_list').sortable({
-                handle: '.wdg-imtb-item-header',
-                placeholder: 'block-placeholder',
-                tolerance: 'pointer',
-                update: function() { renumberItems(); saveTabs(); }
-            });
-        }
-    }
-
-    function renumberItems() {
-        $('#wdg_imtb_tabs_list .wdg-imtb-item').each(function(idx) {
-            $(this).find('.wdg-imtb-item-header span').text('<?php echo t("Tab"); ?> ' + (idx + 1));
-        });
+        updateItemDisplay($item);
     }
 
     // Φόρτωση αποθηκευμένων tabs
@@ -239,14 +303,14 @@ jQuery(function ($) {
         return {
             widget_id: 'image_tabs',
             params: {
-                eyebrow:        $('#wdg_imtb_eyebrow').val(),
-                title:          $('#wdg_imtb_title').val(),
-                description:    $('#wdg_imtb_description').val(),
-                image_position: $('#wdg_imtb_image_position').val(),
-                aspect_ratio:   $('#wdg_imtb_aspect_ratio').val(),
-                color_scheme:   $('#wdg_imtb_color_scheme').val(),
-                container_width:$('#wdg_imtb_container_width').val(),
-                tabs:           $('#wdg_imtb_tabs').val()
+                eyebrow:         $('#wdg_imtb_eyebrow').val(),
+                title:           $('#wdg_imtb_title').val(),
+                description:     $('#wdg_imtb_description').val(),
+                image_position:  $('#wdg_imtb_image_position').val(),
+                aspect_ratio:    $('#wdg_imtb_aspect_ratio').val(),
+                color_scheme:    $('#wdg_imtb_color_scheme').val(),
+                container_width: $('#wdg_imtb_container_width').val(),
+                tabs:            $('#wdg_imtb_tabs').val()
             }
         };
     };

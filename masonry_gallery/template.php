@@ -183,7 +183,7 @@ if (!$_full_width && $_max_width) {
                     <?php if ($_has_content): ?>
                     <div class="widget-card-content <?php echo $_align_class; ?>">
                         <?php if ($_heading): ?>
-                        <h3 class="w-title t-xl"><?php echo $_heading; ?></h3>
+                        <h3 class="w-title t-sm"><?php echo $_heading; ?></h3>
                         <?php endif; ?>
                         <?php if ($_cat): ?>
                         <p class="widget-card-category w-meta t-sm"><?php echo $_cat; ?></p>

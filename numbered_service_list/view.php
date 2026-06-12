@@ -20,9 +20,9 @@ $_nsl_page_opts .= '<option value="fileLinks_nsl">' . t("Link για αρχεί�
 
 <style>
     .ody_builder_parameter { max-width: 500px !important; }
-    .wdg-nsl-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 6px; background: #f0f4f4; }
-    .wdg-nsl-item-header { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #002e3a; border-radius: 4px 4px 0 0; cursor: move; }
-    .wdg-nsl-item-header span { color: white; font-size: 11px; flex: 1; }
+    .wdg-nsl-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 6px; background: #f0f4f4; transition: box-shadow 0.3s ease; }
+    .wdg-nsl-item-header { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #002e3a; border-radius: 4px 4px 0 0; }
+    .wdg-nsl-item-header span { color: white; font-size: 11px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wdg-nsl-item-body { padding: 8px; }
     .wdg-nsl-item-body .ody_builder_parameter { max-width: 100% !important; margin-bottom: 5px; }
     .selectLink {
@@ -37,6 +37,12 @@ $_nsl_page_opts .= '<option value="fileLinks_nsl">' . t("Link για αρχεί�
         margin: 2px 0 5px;
         box-sizing: border-box;
     }
+
+    /* ── Βελάκια μετακίνησης ── */
+    .wdg-nsl-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
+    .wdg-nsl-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
+    .wdg-nsl-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .wdg-nsl-move-btn:active { transform: scale(0.9); }
 </style>
 
 <!-- ══ ΓΕΝΙΚΑ ═══════════════════════════════════════════════════════════════ -->
@@ -119,7 +125,7 @@ jQuery(function ($) {
         return (_p[key] !== undefined && _p[key] !== '') ? _p[key] : (def !== undefined ? def : '');
     }
 
-    // ── Restore scalars ────────────────────────────────────────────────────────
+    // ── Restore scalars ───────────────────────────────────────────────────────
     $('#wdg_nsl_eyebrow').val(pval('eyebrow'));
     $('#wdg_nsl_title').val(pval('title'));
     $('#wdg_nsl_description').val(pval('description'));
@@ -129,7 +135,7 @@ jQuery(function ($) {
     if (pval('show_numbers',  '1') === '1') $('#wdg_nsl_show_numbers').prop('checked', true);
     if (pval('show_dividers', '1') === '1') $('#wdg_nsl_show_dividers').prop('checked', true);
 
-    // ── wdgNslSetLink ──────────────────────────────────────────────────────────
+    // ── wdgNslSetLink ─────────────────────────────────────────────────────────
     window.wdgNslSetLink = function(val, urlFieldId, idx) {
         if (!val || val === 'divider') return;
         if (val === 'nodeLinks_nsl') { document.getElementById('wdg_nsl_node_popup_' + idx).click(); return; }
@@ -138,21 +144,78 @@ jQuery(function ($) {
         $('#' + urlFieldId).val(link);
     };
 
+    // ── Item display ──────────────────────────────────────────────────────────
+    function updateItemDisplay($item, titleId) {
+        var titleVal = $('#' + titleId).val();
+        var itemNumber = $item.index() + 1;
+        var displayText = '<?php echo t("Υπηρεσία"); ?> ' + itemNumber;
+        if (titleVal && titleVal.trim() !== '') {
+            displayText += ': ' + titleVal;
+        }
+        $item.find('.wdg-nsl-item-header span').text(displayText);
+    }
+
+    function renumberItems() {
+        $('#wdg_nsl_items_list .wdg-nsl-item').each(function() {
+            var $it = $(this);
+            var ii  = $it.data('ii');
+            var titleId = 'wdg_nsl_item_title_nsl_' + ii;
+            updateItemDisplay($it, titleId);
+        });
+    }
+
+    // ── Move functions ────────────────────────────────────────────────────────
+    function moveItemUp($item, titleId) {
+        var $prev = $item.prev('.wdg-nsl-item');
+        if ($prev.length) {
+            $item.slideUp(1, function() {
+                $item.insertBefore($prev);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
+    function moveItemDown($item, titleId) {
+        var $next = $item.next('.wdg-nsl-item');
+        if ($next.length) {
+            $item.slideUp(1, function() {
+                $item.insertAfter($next);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
     // ── Add Item ──────────────────────────────────────────────────────────────
     function addItem(itemData) {
         itemData = itemData || {};
-        var ii  = _item_idx++;
-        var uid = 'nsl_' + ii;
-        var urlId   = 'wdg_nsl_url_'    + uid;
-        var tabId   = 'wdg_nsl_newtab_' + uid;
+        var ii     = _item_idx++;
+        var uid    = 'nsl_' + ii;
+        var titleId = 'wdg_nsl_item_title_' + uid;
+        var descId  = 'wdg_nsl_item_desc_'  + uid;
+        var urlId   = 'wdg_nsl_url_'        + uid;
+        var tabId   = 'wdg_nsl_newtab_'     + uid;
         var nodePop = 'wdg_nsl_node_popup_' + ii;
         var filePop = 'wdg_nsl_file_popup_' + ii;
 
         var $item = $('<div class="wdg-nsl-item" data-ii="' + ii + '">');
         $item.append(
             '<div class="wdg-nsl-item-header">' +
-                '<span><?php echo t("Υπηρεσία"); ?> ' + ($('#wdg_nsl_items_list .wdg-nsl-item').length + 1) + '</span>' +
-                '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
+            '<div class="wdg-nsl-move-buttons">' +
+            '<button type="button" class="wdg-nsl-move-btn wdg-nsl-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+            '<button type="button" class="wdg-nsl-move-btn wdg-nsl-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+            '</div>' +
+            '<span><?php echo t("Υπηρεσία"); ?> ' + ($('#wdg_nsl_items_list .wdg-nsl-item').length + 1) + '</span>' +
+            '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
             '</div>'
         );
 
@@ -161,13 +224,13 @@ jQuery(function ($) {
         // Title
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Τίτλος"); ?></label>' +
-            '<input type="text" id="wdg_nsl_item_title_' + uid + '" class="listbox" value="' + $('<div>').text(itemData.title || '').html() + '"></div>'
+            '<input type="text" id="' + titleId + '" class="listbox" value="' + $('<div>').text(itemData.title || '').html() + '"></div>'
         );
 
         // Description
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Περιγραφή"); ?></label>' +
-            '<textarea id="wdg_nsl_item_desc_' + uid + '" class="listbox" rows="3" style="width:100%; box-sizing:border-box;">' + $('<div>').text(itemData.description || '').html() + '</textarea></div>'
+            '<textarea id="' + descId + '" class="listbox" rows="3" style="width:100%; box-sizing:border-box;">' + $('<div>').text(itemData.description || '').html() + '</textarea></div>'
         );
 
         // URL + selectLink
@@ -175,11 +238,11 @@ jQuery(function ($) {
             '<div class="ody_builder_parameter"><label><?php echo t("Σύνδεσμος"); ?></label>' +
             '<input type="text" id="' + urlId + '" class="listbox" value="' + $('<div>').text(itemData.url || '').html() + '">' +
             '<select class="selectLink listbox" onchange="wdgNslSetLink($(this).val(), \'' + urlId + '\', ' + ii + '); $(this).val(\'\');">' +
-                _page_opts +
+            _page_opts +
             '</select></div>'
         );
 
-        // New tab checkbox
+        // New tab
         $body.append(
             '<div class="ody_builder_parameter">' +
             '<div class="admin_checkbox_wrapper" style="margin: 0 0 10px;">' +
@@ -202,28 +265,33 @@ jQuery(function ($) {
         // Restore
         if (itemData.new_tab == '1') $('#' + tabId).prop('checked', true);
 
-        $item.find('.wdg-item-remove').on('click', function () {
-            $item.fadeOut(200, function () { $item.remove(); renumberItems(); });
+        // ── Real-time title update ────────────────────────────────────────────
+        $('#' + titleId).on('input', function() {
+            updateItemDisplay($item, titleId);
         });
 
-        if ($.fn.sortable) {
-            $('#wdg_nsl_items_list').sortable({
-                handle: '.wdg-nsl-item-header',
-                placeholder: 'block-placeholder',
-                tolerance: 'pointer',
-                stop: function () { renumberItems(); }
+        // ── Move buttons ──────────────────────────────────────────────────────
+        $item.find('.wdg-nsl-move-up').on('click', function(e) {
+            e.stopPropagation();
+            moveItemUp($item, titleId);
+        });
+        $item.find('.wdg-nsl-move-down').on('click', function(e) {
+            e.stopPropagation();
+            moveItemDown($item, titleId);
+        });
+
+        $item.find('.wdg-item-remove').on('click', function() {
+            $item.fadeOut(200, function() {
+                $item.remove();
+                renumberItems();
             });
-        }
-    }
-
-    function renumberItems() {
-        $('#wdg_nsl_items_list .wdg-nsl-item').each(function (idx) {
-            $(this).find('.wdg-nsl-item-header span').text('<?php echo t("Υπηρεσία"); ?> ' + (idx + 1));
         });
+
+        updateItemDisplay($item, titleId);
     }
 
-    _items.forEach(function (item) { addItem(item); });
-    $('#wdg_nsl_add_item_btn').on('click', function () { addItem({}); });
+    _items.forEach(function(item) { addItem(item); });
+    $('#wdg_nsl_add_item_btn').on('click', function() { addItem({}); });
 
     // ── Label ─────────────────────────────────────────────────────────────────
     label = 'Widget Numbered Service List';
@@ -231,9 +299,9 @@ jQuery(function ($) {
     $('.ody_builder_header h2').html('Widgetizer — Numbered Service List');
 
     // ── get_block_data ────────────────────────────────────────────────────────
-    window.get_block_data = function () {
+    window.get_block_data = function() {
         var items = [];
-        $('#wdg_nsl_items_list .wdg-nsl-item').each(function () {
+        $('#wdg_nsl_items_list .wdg-nsl-item').each(function() {
             var ii  = $(this).data('ii');
             var uid = 'nsl_' + ii;
             items.push({
@@ -246,15 +314,15 @@ jQuery(function ($) {
         return {
             widget_id: 'numbered_service_list',
             params: {
-                eyebrow:        $('#wdg_nsl_eyebrow').val(),
-                title:          $('#wdg_nsl_title').val(),
-                description:    $('#wdg_nsl_description').val(),
-                color_scheme:   $('#wdg_nsl_color_scheme').val(),
-                container_width:$('#wdg_nsl_container_width').val(),
-                alignment:      $('#wdg_nsl_alignment').val(),
-                show_numbers:   $('#wdg_nsl_show_numbers').is(':checked')  ? '1' : '0',
-                show_dividers:  $('#wdg_nsl_show_dividers').is(':checked') ? '1' : '0',
-                items:          items
+                eyebrow:         $('#wdg_nsl_eyebrow').val(),
+                title:           $('#wdg_nsl_title').val(),
+                description:     $('#wdg_nsl_description').val(),
+                color_scheme:    $('#wdg_nsl_color_scheme').val(),
+                container_width: $('#wdg_nsl_container_width').val(),
+                alignment:       $('#wdg_nsl_alignment').val(),
+                show_numbers:    $('#wdg_nsl_show_numbers').is(':checked')  ? '1' : '0',
+                show_dividers:   $('#wdg_nsl_show_dividers').is(':checked') ? '1' : '0',
+                items:           items
             }
         };
     };

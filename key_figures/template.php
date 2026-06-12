@@ -89,12 +89,27 @@ if (!$_full_width && $_max_width) {
     line-height: 1;
     color: var(--text-heading) !important;
     margin: 0;
-    margin-block-end: var(--space-sm);
     font-variant-numeric: tabular-nums;
 }
-.widget-<?php echo $_widget_id; ?> .odometer {
+.widget-<?php echo $_widget_id; ?> .stats-number-wrap {
     display: inline-flex;
-    align-items: flex-end;
+    align-items: center; /* ΔΙΟΡΘΩΣΗ: Από baseline σε center για σταθερή στοίχιση */
+    justify-content: center;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+    margin-block-end: var(--space-sm);
+}
+.widget-<?php echo $_widget_id; ?> .stats-suffix {
+    font-size: calc(var(--font-size-5xl) * var(--heading-scale));
+    line-height: 1;
+    color: var(--text-heading) !important;
+    font-weight: normal;
+    display: inline-block; /* ΔΙΟΡΘΩΣΗ: Προσθήκη για καλύτερο έλεγχο του box μοντέλου */
+}
+.widget-<?php echo $_widget_id; ?> .odometer {
+    display: inline-block; /* ΔΙΟΡΘΩΣΗ: Από inline-flex σε inline-block για αποφυγή bugs με το overflow */
+    line-height: 1;
+    vertical-align: middle;
 }
 .widget-<?php echo $_widget_id; ?> .odometer-digit {
     display: inline-block;
@@ -128,6 +143,18 @@ if (!$_full_width && $_max_width) {
 @media (min-width: 990px) {
     .widget-<?php echo $_widget_id; ?> .widget-card {
         padding: var(--space-3xl) var(--space-xl);
+    }
+}
+@media (max-width: 989px) {
+    .widget-<?php echo $_widget_id; ?> .stats-number,
+    .widget-<?php echo $_widget_id; ?> .stats-suffix {
+        font-size: calc(var(--font-size-4xl) * var(--heading-scale));
+    }
+}
+@media (max-width: 640px) {
+    .widget-<?php echo $_widget_id; ?> .stats-number,
+    .widget-<?php echo $_widget_id; ?> .stats-suffix {
+        font-size: calc(var(--font-size-3xl) * var(--heading-scale));
     }
 }
 .widget-<?php echo $_widget_id; ?>:not(.card-layout-flat).color-scheme-standard-secondary .widget-card,

@@ -28,7 +28,6 @@ $_header_alignment = $wdg_params['header_alignment']                  ?? 'center
 $_layout           = $wdg_params['layout']                            ?? 'grid';
 $_columns          = (int)($wdg_params['columns']                     ?? 3);
 $_image_style      = $wdg_params['image_style']                       ?? 'circle';
-$_image_aspect_ratio = $wdg_params['image_aspect_ratio']              ?? '1:1';
 $_prgr_items       = $wdg_params['items']                             ?? [];
 
 $_container_width = $wdg_params['container_width'] ?? 'xl';
@@ -41,10 +40,6 @@ $_section_style   = 'padding-bottom: 20px;';
 if (!$_full_width && $_max_width) {
     $_section_style .= ' max-width: ' . $_max_width . '; margin-inline: auto;';
 }
-
-// ── Aspect ratio for full image style ────────────────────────────────────────
-$_aspect_ratio_css = str_replace(':', ' / ', $_image_aspect_ratio);
-$_aspect_ratio_final = ($_image_style === 'full') ? $_aspect_ratio_css : '3/4';
 
 // ── Social SVG icons ──────────────────────────────────────────────────────────
 $_social_svgs = [
@@ -112,7 +107,7 @@ if (!function_exists('_prgr_svg')) {
 .widget-<?php echo $_widget_id; ?>.image-style-full .profile-image {
     width: 100%;
     height: auto;
-    aspect-ratio: <?php echo $_aspect_ratio_final; ?>;
+    aspect-ratio: 3 / 4;
     object-fit: cover;
     display: block;
     border-radius: var(--radius-md);
@@ -302,41 +297,3 @@ JSEOF;
 echo $_script;
 endif;
 ?>
-
-<!-- Asset injector fallback (in case $document->loadedFiles failed) -->
-<script>
-(function() {
-    var cssUrl = '<?php echo $_wdg_css; ?>';
-    var jsUrl = '<?php echo $_wdg_js; ?>';
-    
-    var cssLoaded = false;
-    var links = document.querySelectorAll('link[rel="stylesheet"]');
-    for (var i = 0; i < links.length; i++) {
-        if (links[i].href && links[i].href.indexOf('base.css') !== -1) {
-            cssLoaded = true;
-            break;
-        }
-    }
-    if (!cssLoaded) {
-        var link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = cssUrl;
-        document.head.appendChild(link);
-    }
-    
-    var jsLoaded = false;
-    var scripts = document.querySelectorAll('script[src]');
-    for (var i = 0; i < scripts.length; i++) {
-        if (scripts[i].src && scripts[i].src.indexOf('scripts.js') !== -1) {
-            jsLoaded = true;
-            break;
-        }
-    }
-    if (!jsLoaded) {
-        var script = document.createElement('script');
-        script.src = jsUrl;
-        script.defer = true;
-        document.head.appendChild(script);
-    }
-})();
-</script>

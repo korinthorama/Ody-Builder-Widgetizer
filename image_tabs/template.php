@@ -151,7 +151,7 @@ if ($_aspect_ratio === 'auto') {
     <div class="widget-container widget-container-padded">
 
         <?php if ($_eyebrow || $_title || $_description): ?>
-        <div class="widget-header widget-header--align-start">
+        <div class="widget-header widget-header--align-center">
             <?php if ($_eyebrow): ?>
             <span class="w-eyebrow reveal reveal-up" style="--reveal-delay: 0"><?php echo $_eyebrow; ?></span>
             <?php endif; ?>

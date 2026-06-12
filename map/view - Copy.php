@@ -2,17 +2,11 @@
 
 <style>
     .ody_builder_parameter { max-width: 500px !important; }
-    .wdg-map-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 6px; background: #f0f4f4; transition: box-shadow 0.3s ease; }
-    .wdg-map-item-header { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #002e3a; border-radius: 4px 4px 0 0; }
-    .wdg-map-item-header span { color: white; font-size: 11px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wdg-map-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 6px; background: #f0f4f4; }
+    .wdg-map-item-header { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #002e3a; border-radius: 4px 4px 0 0; cursor: move; }
+    .wdg-map-item-header span { color: white; font-size: 11px; flex: 1; }
     .wdg-map-item-body { padding: 8px; }
     .wdg-map-item-body .ody_builder_parameter { max-width: 100% !important; margin-bottom: 5px; }
-
-    /* ── Βελάκια μετακίνησης ── */
-    .wdg-map-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
-    .wdg-map-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
-    .wdg-map-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
-    .wdg-map-move-btn:active { transform: scale(0.9); }
 </style>
 
 <!-- ══ ΓΕΝΙΚΑ ═══════════════════════════════════════════════════════════════ -->
@@ -108,21 +102,11 @@ jQuery(function ($) {
     var _items    = _p['sidebar_items'] || [];
     var _item_idx = 0;
 
-    function decodeNL(str) {
-        if (!str || typeof str !== 'string') return str || '';
-        return str.replace(/\[nl\]/g, '\n');
-    }
-
-    function encodeNL(str) {
-        if (!str || typeof str !== 'string') return str || '';
-        return str.replace(/\n/g, '[nl]');
-    }
-
     function pval(key, def) {
         return (_p[key] !== undefined && _p[key] !== '') ? _p[key] : (def !== undefined ? def : '');
     }
 
-    // ── Restore scalars ───────────────────────────────────────────────────────
+    // ── Restore scalars ────────────────────────────────────────────────────────
     $('#wdg_map_eyebrow').val(pval('eyebrow'));
     $('#wdg_map_title').val(pval('title'));
     $('#wdg_map_description').val(pval('description'));
@@ -135,78 +119,17 @@ jQuery(function ($) {
     $('#wdg_map_address').val(pval('address'));
     $('#wdg_map_directions_url').val(pval('directions_url'));
 
-    // ── Item display ──────────────────────────────────────────────────────────
-    function updateItemDisplay($item, titleId) {
-        var titleVal = $('#' + titleId).val();
-        var itemNumber = $item.index() + 1;
-        var displayText = 'Block ' + itemNumber;
-        if (titleVal && titleVal.trim() !== '') {
-            displayText += ': ' + titleVal;
-        }
-        $item.find('.wdg-map-item-header span').text(displayText);
-    }
-
-    function renumberItems() {
-        $('#wdg_map_items_list .wdg-map-item').each(function() {
-            var $it = $(this);
-            var ii  = $it.data('ii');
-            var titleId = 'wdg_map_block_title_map_' + ii;
-            updateItemDisplay($it, titleId);
-        });
-    }
-
-    // ── Move functions ────────────────────────────────────────────────────────
-    function moveItemUp($item, titleId) {
-        var $prev = $item.prev('.wdg-map-item');
-        if ($prev.length) {
-            $item.slideUp(1, function() {
-                $item.insertBefore($prev);
-                $item.slideDown(1, function() {
-                    renumberItems();
-                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
-                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
-                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
-                });
-            });
-        }
-    }
-
-    function moveItemDown($item, titleId) {
-        var $next = $item.next('.wdg-map-item');
-        if ($next.length) {
-            $item.slideUp(1, function() {
-                $item.insertAfter($next);
-                $item.slideDown(1, function() {
-                    renumberItems();
-                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
-                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
-                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
-                });
-            });
-        }
-    }
-
     // ── Add Item ──────────────────────────────────────────────────────────────
     function addItem(itemData) {
         itemData = itemData || {};
         var ii  = _item_idx++;
         var uid = 'map_' + ii;
 
-        var restoredTitle = decodeNL(itemData.title || '');
-        var restoredText  = decodeNL(itemData.text  || '');
-
-        var titleId = 'wdg_map_block_title_' + uid;
-        var textId  = 'wdg_map_block_text_'  + uid;
-
         var $item = $('<div class="wdg-map-item" data-ii="' + ii + '">');
         $item.append(
             '<div class="wdg-map-item-header">' +
-            '<div class="wdg-map-move-buttons">' +
-            '<button type="button" class="wdg-map-move-btn wdg-map-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
-            '<button type="button" class="wdg-map-move-btn wdg-map-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
-            '</div>' +
-            '<span>Block ' + ($('#wdg_map_items_list .wdg-map-item').length + 1) + '</span>' +
-            '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
+                '<span>Block ' + ($('#wdg_map_items_list .wdg-map-item').length + 1) + '</span>' +
+                '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
             '</div>'
         );
 
@@ -214,50 +137,40 @@ jQuery(function ($) {
 
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Τίτλος"); ?></label>' +
-            '<input type="text" id="' + titleId + '" class="listbox" value="' + $('<div>').text(restoredTitle).html() + '"></div>'
+            '<input type="text" id="wdg_map_block_title_' + uid + '" class="listbox" value="' + $('<div>').text(itemData.title || '').html() + '"></div>'
         );
 
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Κείμενο κουμπιού"); ?></label>' +
-            '<textarea id="' + textId + '" class="listbox" rows="4" style="width:100%; box-sizing:border-box;">' + $('<div>').text(restoredText).html() + '</textarea></div>'
+            '<textarea id="wdg_map_block_text_' + uid + '" class="listbox" rows="4" style="width:100%; box-sizing:border-box;">' + $('<div>').text(itemData.text || '').html() + '</textarea></div>'
         );
 
         $item.append($body);
         $('#wdg_map_items_list').append($item);
 
-        // ── Real-time title update ────────────────────────────────────────────
-        $('#' + titleId).on('input', function() {
-            updateItemDisplay($item, titleId);
+        $item.find('.wdg-item-remove').on('click', function () {
+            $item.fadeOut(200, function () { $item.remove(); renumberItems(); });
         });
 
-        // ── Move buttons ──────────────────────────────────────────────────────
-        $item.find('.wdg-map-move-up').on('click', function(e) {
-            e.stopPropagation();
-            moveItemUp($item, titleId);
-        });
-        $item.find('.wdg-map-move-down').on('click', function(e) {
-            e.stopPropagation();
-            moveItemDown($item, titleId);
-        });
+        if ($.fn.sortable) {
+            $('#wdg_map_items_list').sortable({ handle: '.wdg-map-item-header', placeholder: 'block-placeholder', tolerance: 'pointer', stop: function() { renumberItems(); } });
+        }
+    }
 
-        $item.find('.wdg-item-remove').on('click', function() {
-            $item.fadeOut(200, function() {
-                $item.remove();
-                renumberItems();
-            });
+    function renumberItems() {
+        $('#wdg_map_items_list .wdg-map-item').each(function(idx) {
+            $(this).find('.wdg-map-item-header span').text('Block ' + (idx + 1));
         });
-
-        updateItemDisplay($item, titleId);
     }
 
     // ── Restore items ─────────────────────────────────────────────────────────
     if (_items.length > 0) {
-        _items.forEach(function(item) { addItem(item); });
+        _items.forEach(function (item) { addItem(item); });
     } else {
         addItem({});
     }
 
-    $('#wdg_map_add_item_btn').on('click', function() { addItem({}); });
+    $('#wdg_map_add_item_btn').on('click', function () { addItem({}); });
 
     // ── Label ─────────────────────────────────────────────────────────────────
     label = 'Widget Map';
@@ -265,14 +178,14 @@ jQuery(function ($) {
     $('.ody_builder_header h2').html('Widgetizer — Map');
 
     // ── get_block_data ────────────────────────────────────────────────────────
-    window.get_block_data = function() {
+    window.get_block_data = function () {
         var sidebar_items = [];
-        $('#wdg_map_items_list .wdg-map-item').each(function() {
+        $('#wdg_map_items_list .wdg-map-item').each(function () {
             var ii  = $(this).data('ii');
             var uid = 'map_' + ii;
             sidebar_items.push({
-                title: encodeNL($('#wdg_map_block_title_' + uid).val() || ''),
-                text:  encodeNL($('#wdg_map_block_text_'  + uid).val() || '')
+                title: $('#wdg_map_block_title_' + uid).val(),
+                text:  $('#wdg_map_block_text_'  + uid).val()
             });
         });
         return {

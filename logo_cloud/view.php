@@ -20,9 +20,9 @@ $_lcld_page_opts .= '<option value="fileLinks_lcld">' . t("Link για αρχε�
 
 <style>
     .ody_builder_parameter { max-width: 500px !important; }
-    .wdg-lcld-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 6px; background: #f0f4f4; overflow: hidden; }
-    .wdg-lcld-item-header { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #002e3a; border-radius: 4px 4px 0 0; cursor: move; }
-    .wdg-lcld-item-header span { color: white; font-size: 11px; flex: 1; }
+    .wdg-lcld-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 6px; background: #f0f4f4; overflow: hidden; transition: box-shadow 0.3s ease; }
+    .wdg-lcld-item-header { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #002e3a; border-radius: 4px 4px 0 0; }
+    .wdg-lcld-item-header span { color: white; font-size: 11px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wdg-lcld-item-body { padding: 8px; overflow: hidden; }
     .wdg-lcld-item-body .listbox { width: 100%; box-sizing: border-box; }
     .wdg-lcld-item-body .ody_builder_parameter { max-width: 100% !important; margin-bottom: 5px; box-sizing: border-box; }
@@ -41,6 +41,12 @@ $_lcld_page_opts .= '<option value="fileLinks_lcld">' . t("Link για αρχε�
         margin: 2px 0 5px;
         box-sizing: border-box;
     }
+
+    /* ── Βελάκια μετακίνησης ── */
+    .wdg-lcld-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
+    .wdg-lcld-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
+    .wdg-lcld-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .wdg-lcld-move-btn:active { transform: scale(0.9); }
 </style>
 
 <!-- ══ ΓΕΝΙΚΑ ═══════════════════════════════════════════════════════════════ -->
@@ -160,7 +166,7 @@ jQuery(function ($) {
     // ── VenoBox για mediabank ─────────────────────────────────────────────────
     window.venobox = new VenoBox({ selector: '.wdg-lcld-select-media', fitView: true, ratio: 'full' });
 
-    // ── odyRecieveMediabank ────────────────────────────────────────────────────
+    // ── odyRecieveMediabank ───────────────────────────────────────────────────
     window.odyRecieveMediabank = function(file, id, ext, image_path, callerEl) {
         var targetId = $(callerEl || window._wdg_mediabank_caller).data('wdg-target');
         if (!targetId) return;
@@ -171,7 +177,7 @@ jQuery(function ($) {
         $('#' + targetId + '_remove').css('visibility', 'visible');
     };
 
-    // ── wdgLcldSetLink ─────────────────────────────────────────────────────────
+    // ── wdgLcldSetLink ────────────────────────────────────────────────────────
     window.wdgLcldSetLink = function(val, urlFieldId, idx) {
         if (!val || val === 'divider') return;
         if (val === 'nodeLinks_lcld') { document.getElementById('wdg_lcld_node_popup_' + idx).click(); return; }
@@ -181,6 +187,57 @@ jQuery(function ($) {
             : '««index.php?section=pages~|||~view=render~|||~id=' + val + '»»';
         $('#' + urlFieldId).val(link);
     };
+
+    // ── Item display ──────────────────────────────────────────────────────────
+    function updateItemDisplay($item, altId) {
+        var altVal = $('#' + altId).val();
+        var itemNumber = $item.index() + 1;
+        var displayText = '<?php echo t("Logo"); ?> ' + itemNumber;
+        if (altVal && altVal.trim() !== '') {
+            displayText += ': ' + altVal;
+        }
+        $item.find('.wdg-lcld-item-header span').text(displayText);
+    }
+
+    function renumberItems() {
+        $('#wdg_lcld_items_list .wdg-lcld-item').each(function() {
+            var $it = $(this);
+            var ii  = $it.data('ii');
+            var altId = 'wdg_lcld_alt_lcld_' + ii;
+            updateItemDisplay($it, altId);
+        });
+    }
+
+    // ── Move functions ────────────────────────────────────────────────────────
+    function moveItemUp($item, altId) {
+        var $prev = $item.prev('.wdg-lcld-item');
+        if ($prev.length) {
+            $item.slideUp(1, function() {
+                $item.insertBefore($prev);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
+    function moveItemDown($item, altId) {
+        var $next = $item.next('.wdg-lcld-item');
+        if ($next.length) {
+            $item.slideUp(1, function() {
+                $item.insertAfter($next);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
 
     // ── Add Item ──────────────────────────────────────────────────────────────
     function addItem(itemData) {
@@ -196,7 +253,16 @@ jQuery(function ($) {
         var filePop = 'wdg_lcld_file_popup_' + ii;
 
         var $item = $('<div class="wdg-lcld-item" data-ii="' + ii + '">');
-        $item.append('<div class="wdg-lcld-item-header"><span><?php echo t("Logo"); ?> ' + ($('#wdg_lcld_items_list .wdg-lcld-item').length + 1) + '</span><button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button></div>');
+        $item.append(
+            '<div class="wdg-lcld-item-header">' +
+            '<div class="wdg-lcld-move-buttons">' +
+            '<button type="button" class="wdg-lcld-move-btn wdg-lcld-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+            '<button type="button" class="wdg-lcld-move-btn wdg-lcld-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+            '</div>' +
+            '<span><?php echo t("Logo"); ?> ' + ($('#wdg_lcld_items_list .wdg-lcld-item').length + 1) + '</span>' +
+            '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
+            '</div>'
+        );
 
         var $body = $('<div class="wdg-lcld-item-body">');
 
@@ -214,7 +280,7 @@ jQuery(function ($) {
             '</div>'
         );
 
-        // Alt text
+        // Alt text (Επωνυμία)
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Επωνυμία εταιρείας"); ?></label>' +
             '<input type="text" id="' + altId + '" class="listbox" value="' + $('<div>').text(itemData.alt || '').html() + '"></div>'
@@ -225,7 +291,7 @@ jQuery(function ($) {
             '<div class="ody_builder_parameter"><label><?php echo t("Σύνδεσμος"); ?></label>' +
             '<input type="text" id="' + urlId + '" class="listbox" value="' + $('<div>').text(itemData.url || '').html() + '">' +
             '<select class="selectLink listbox" onchange="wdgLcldSetLink($(this).val(), \'' + urlId + '\', ' + ii + '); $(this).val(\'\');">' +
-                _page_opts +
+            _page_opts +
             '</select></div>'
         );
 
@@ -270,19 +336,29 @@ jQuery(function ($) {
         }
         if (itemData.new_tab == '1') $('#' + tabId).prop('checked', true);
 
+        // ── Real-time alt update ──────────────────────────────────────────────
+        $('#' + altId).on('input', function() {
+            updateItemDisplay($item, altId);
+        });
+
+        // ── Move buttons ──────────────────────────────────────────────────────
+        $item.find('.wdg-lcld-move-up').on('click', function(e) {
+            e.stopPropagation();
+            moveItemUp($item, altId);
+        });
+        $item.find('.wdg-lcld-move-down').on('click', function(e) {
+            e.stopPropagation();
+            moveItemDown($item, altId);
+        });
+
         $item.find('.wdg-item-remove').on('click', function() {
-            $item.fadeOut(200, function() { $item.remove(); renumberItems(); });
+            $item.fadeOut(200, function() {
+                $item.remove();
+                renumberItems();
+            });
         });
 
-        if ($.fn.sortable) {
-            $('#wdg_lcld_items_list').sortable({ handle: '.wdg-lcld-item-header', placeholder: 'block-placeholder', tolerance: 'pointer', stop: function() { renumberItems(); } });
-        }
-    }
-
-    function renumberItems() {
-        $('#wdg_lcld_items_list .wdg-lcld-item').each(function(idx) {
-            $(this).find('.wdg-lcld-item-header span').text('<?php echo t("Logo"); ?> ' + (idx + 1));
-        });
+        updateItemDisplay($item, altId);
     }
 
     _items.forEach(function(item) { addItem(item); });

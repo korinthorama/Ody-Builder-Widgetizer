@@ -9,7 +9,6 @@
         border-radius: 4px;
         margin-bottom: 6px;
         background: #f0f4f4;
-        transition: box-shadow 0.3s ease;
     }
 
     .wdg-prgr-item-header {
@@ -19,15 +18,13 @@
         padding: 5px 8px;
         background: #002e3a;
         border-radius: 4px 4px 0 0;
+        cursor: move;
     }
 
     .wdg-prgr-item-header span {
         color: white;
         font-size: 11px;
         flex: 1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 
     .wdg-prgr-item-body {
@@ -70,7 +67,7 @@
     }
 
     .wdg-prgr-social-item {
-        clear: both;
+        clear:both;
     }
 
     .wdg-prgr-social-item input {
@@ -115,12 +112,6 @@
         max-width: 304px;
         margin: 6px auto 0;
     }
-
-    /* ── Βελάκια μετακίνησης ── */
-    .wdg-prgr-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
-    .wdg-prgr-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
-    .wdg-prgr-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
-    .wdg-prgr-move-btn:active { transform: scale(0.9); }
 </style>
 <!-- ══ ΓΕΝΙΚΑ ═══════════════════════════════════════════════════════════════ -->
 <div class="wdg-section-title"><?php echo t("Γενικά"); ?></div>
@@ -188,15 +179,6 @@
         <option value="full"><?php echo t("Μεγάλη διάσταση"); ?></option>
     </select>
 </div>
-<div class="ody_builder_parameter" id="wdg_prgr_aspect_ratio_container" style="display: none;">
-    <label for="wdg_prgr_image_aspect_ratio"><?php echo t("Αναλογία διαστάσεων (Aspect Ratio)"); ?></label>
-    <select id="wdg_prgr_image_aspect_ratio" class="listbox">
-        <option value="1:1">1:1 (Τετράγωνο)</option>
-        <option value="4:3">4:3 (Οριζόντιο)</option>
-        <option value="3:2">3:2 (Οριζόντιο)</option>
-        <option value="3:4">3:4 (Κάθετο)</option>
-    </select>
-</div>
 <!-- ══ PROFILES ══════════════════════════════════════════════════════════════ -->
 <div class="wdg-section-title">Profiles</div>
 <div id="wdg_prgr_items_container" class="ody_builder_parameter">
@@ -233,7 +215,7 @@
             return (_p[key] !== undefined && _p[key] !== '') ? _p[key] : (def !== undefined ? def : '');
         }
 
-        // ── Restore scalars ───────────────────────────────────────────────────
+        // ── Restore scalars ────────────────────────────────────────────────────────
         $('#wdg_prgr_eyebrow').val(pval('eyebrow'));
         $('#wdg_prgr_title').val(pval('title'));
         $('#wdg_prgr_description').val(pval('description'));
@@ -243,25 +225,12 @@
         $('#wdg_prgr_layout').val(pval('layout', 'grid'));
         $('#wdg_prgr_columns').val(pval('columns', '3'));
         $('#wdg_prgr_image_style').val(pval('image_style', 'circle'));
-        $('#wdg_prgr_image_aspect_ratio').val(pval('image_aspect_ratio', '1:1'));
-
-        function toggleAspectRatio() {
-            if ($('#wdg_prgr_image_style').val() === 'full') {
-                $('#wdg_prgr_aspect_ratio_container').show();
-            } else {
-                $('#wdg_prgr_aspect_ratio_container').hide();
-            }
-        }
-        $('#wdg_prgr_image_style').on('change', toggleAspectRatio);
-        toggleAspectRatio();
-
-        // ── VenoBox shared class ──────────────────────────────────────────────
+        // ── VenoBox shared class ───────────────────────────────────────────────────
         window.venobox = new VenoBox({selector: '.wdg-prgr-select-media', fitView: true, ratio: 'full'});
-
-        // ── odyRecieveMediabank ───────────────────────────────────────────────
-        window.odyRecieveMediabank = function(file, id, ext, image_path, callerEl) {
+        // ── odyRecieveMediabank ────────────────────────────────────────────────────
+        window.odyRecieveMediabank = function (file, id, ext, image_path, callerEl) {
             var targetId = $(callerEl || window._wdg_mediabank_caller).data('wdg-target');
-            if (!targetId) return;
+            if(!targetId) return;
             var fullPath = image_path + id + '.' + ext;
             $('#' + targetId).val(fullPath);
             $('#' + targetId + '_display').text(file);
@@ -269,128 +238,70 @@
             $('#' + targetId + '_remove').css('visibility', 'visible');
         };
 
-        // ── Item display ──────────────────────────────────────────────────────
-        function updateItemDisplay($item, nameId) {
-            var nameVal = $('#' + nameId).val();
-            var itemNumber = $item.index() + 1;
-            var displayText = '<?php echo t("Profile"); ?> ' + itemNumber;
-            if (nameVal && nameVal.trim() !== '') {
-                displayText += ': ' + nameVal;
-            }
-            $item.find('.wdg-prgr-item-header span').text(displayText);
-        }
-
-        function renumberItems() {
-            $('#wdg_prgr_items_list .wdg-prgr-item').each(function() {
-                var $it = $(this);
-                var ii  = $it.data('ii');
-                var nameId = 'wdg_prgr_name_prgr_' + ii;
-                updateItemDisplay($it, nameId);
-            });
-        }
-
-        // ── Move functions ────────────────────────────────────────────────────
-        function moveItemUp($item, nameId) {
-            var $prev = $item.prev('.wdg-prgr-item');
-            if ($prev.length) {
-                $item.slideUp(1, function() {
-                    $item.insertBefore($prev);
-                    $item.slideDown(1, function() {
-                        renumberItems();
-                        $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
-                        $item.css('box-shadow', '0 0 0 2px #fbbf24');
-                        setTimeout(function() { $item.css('box-shadow', ''); }, 100);
-                    });
-                });
-            }
-        }
-
-        function moveItemDown($item, nameId) {
-            var $next = $item.next('.wdg-prgr-item');
-            if ($next.length) {
-                $item.slideUp(1, function() {
-                    $item.insertAfter($next);
-                    $item.slideDown(1, function() {
-                        renumberItems();
-                        $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
-                        $item.css('box-shadow', '0 0 0 2px #fbbf24');
-                        setTimeout(function() { $item.css('box-shadow', ''); }, 100);
-                    });
-                });
-            }
-        }
-
-        // ── Add Item ──────────────────────────────────────────────────────────
+        // ── Add Item ──────────────────────────────────────────────────────────────
         function addItem(itemData) {
             itemData = itemData || {};
-            var ii      = _item_idx++;
-            var uid     = 'prgr_' + ii;
-            var imgId   = 'wdg_prgr_img_'   + uid;
+            var ii = _item_idx++;
+            var uid = 'prgr_' + ii;
+            var imgId = 'wdg_prgr_img_' + uid;
             var mediaId = 'wdg_prgr_media_' + uid;
-            var nameId  = 'wdg_prgr_name_'  + uid;
-
             var $item = $('<div class="wdg-prgr-item" data-ii="' + ii + '">');
             $item.append(
-                '<div class="wdg-prgr-item-header">' +
-                '<div class="wdg-prgr-move-buttons">' +
-                '<button type="button" class="wdg-prgr-move-btn wdg-prgr-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
-                '<button type="button" class="wdg-prgr-move-btn wdg-prgr-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
-                '</div>' +
-                '<span><?php echo t("Profile"); ?> ' + ($('#wdg_prgr_items_list .wdg-prgr-item').length + 1) + '</span>' +
-                '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
-                '</div>'
+                    '<div class="wdg-prgr-item-header">' +
+                    '<span><?php echo t("Profile"); ?> ' + ($('#wdg_prgr_items_list .wdg-prgr-item').length + 1) + '</span>' +
+                    '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
+                    '</div>'
             );
-
             var $body = $('<div class="wdg-prgr-item-body">');
-
             // Image picker
             $body.append(
-                '<div class="ody_builder_parameter"><label><?php echo t("Φωτογραφία"); ?></label>' +
-                '<div class="wdg-img-row">' +
-                '<span id="' + imgId + '_display" class="wdg-img-filename"><?php echo t("Επιλέξτε..."); ?></span>' +
-                '<a href="ody_builder_mediabank.php?blockType=widgetizer&langID=<?php echo $langID; ?>" id="' + mediaId + '"' +
-                ' class="wdg-prgr-select-media ody_builder_content_action btn btn-success" data-vbtype="iframe" data-wdg-target="' + imgId + '"><?php echo t("Επιλογή"); ?></a>' +
-                '<a href="javascript:void(0)" id="' + imgId + '_remove" class="ody_builder_content_action btn btn-danger" style="visibility:hidden;"><?php echo t("Αφαίρεση"); ?></a>' +
-                '</div>' +
-                '<input type="hidden" id="' + imgId + '" value="">' +
-                '<img id="' + imgId + '_preview" class="wdg-img-preview" src="" alt="">' +
-                '</div>'
+                    '<div class="ody_builder_parameter"><label><?php echo t("Φωτογραφία"); ?></label>' +
+                    '<div class="wdg-img-row">' +
+                    '<span id="' + imgId + '_display" class="wdg-img-filename"><?php echo t("Επιλέξτε..."); ?></span>' +
+                    '<a href="ody_builder_mediabank.php?blockType=widgetizer&langID=<?php echo $langID; ?>" id="' + mediaId + '"' +
+                    ' class="wdg-prgr-select-media ody_builder_content_action btn btn-success" data-vbtype="iframe" data-wdg-target="' + imgId + '"><?php echo t("Επιλογή"); ?></a>' +
+                    '<a href="javascript:void(0)" id="' + imgId + '_remove" class="ody_builder_content_action btn btn-danger" style="visibility:hidden;"><?php echo t("Αφαίρεση"); ?></a>' +
+                    '</div>' +
+                    '<input type="hidden" id="' + imgId + '" value="">' +
+                    '<img id="' + imgId + '_preview" class="wdg-img-preview" src="" alt="">' +
+                    '</div>'
             );
-
             // Text fields
             var _fields = [
-                {id: 'name',      label: '<?php echo t("Όνομα"); ?>'},
-                {id: 'role',      label: '<?php echo t("Ρόλος / Τίτλος"); ?>'},
+                {id: 'name', label: '<?php echo t("Όνομα"); ?>'},
+                {id: 'role', label: '<?php echo t("Ρόλος / Τίτλος"); ?>'},
                 {id: 'specialty', label: '<?php echo t("Ειδικότητα"); ?>'},
-                {id: 'bio',       label: '<?php echo t("Βιογραφικό"); ?>'}
+                {id: 'bio', label: '<?php echo t("Βιογραφικό"); ?>'}
             ];
-            _fields.forEach(function(f) {
+            _fields.forEach(function (f) {
                 $body.append(
-                    '<div class="ody_builder_parameter"><label>' + f.label + '</label>' +
-                    '<input type="text" id="wdg_prgr_' + f.id + '_' + uid + '" class="listbox" value="' + $('<div>').text(itemData[f.id] || '').html() + '"></div>'
+                        '<div class="ody_builder_parameter"><label>' + f.label + '</label>' +
+                        '<input type="text" id="wdg_prgr_' + f.id + '_' + uid + '" class="listbox" value="' + $('<div>').text(itemData[f.id] || '').html() + '"></div>'
                 );
             });
-
             // Social links
             var $socialWrap = $('<div class="ody_builder_parameter"><label><?php echo t("Social Links (max 6)"); ?></label>' +
-                '<ul class="wdg-prgr-social-list" id="wdg_prgr_socials_' + uid + '"></ul>' +
-                '<button type="button" class="ody_builder_content_action btn btn-success btn-sm wdg-prgr-add-social">+ <?php echo t("Προσθήκη"); ?> Social</button>' +
-                '<div class="wdg-prgr-social-picker" id="wdg_prgr_picker_' + uid + '"></div>' +
-                '</div>');
+                    '<ul class="wdg-prgr-social-list" id="wdg_prgr_socials_' + uid + '"></ul>' +
+                    '<button type="button" class="ody_builder_content_action btn btn-success btn-sm wdg-prgr-add-social">+ <?php echo t("Προσθήκη"); ?> Social</button>' +
+                    '<div class="wdg-prgr-social-picker" id="wdg_prgr_picker_' + uid + '"></div>' +
+                    '</div>');
             $body.append($socialWrap);
-
-            var $picker      = $socialWrap.find('.wdg-prgr-social-picker');
-            var $socialList  = $socialWrap.find('.wdg-prgr-social-list');
+            // Use direct references — not ID selectors (not in DOM yet)
+            var $picker = $socialWrap.find('.wdg-prgr-social-picker');
+            var $socialList = $socialWrap.find('.wdg-prgr-social-list');
             var $addSocialBtn = $socialWrap.find('.wdg-prgr-add-social');
-
             // Populate picker buttons
-            _social_defs.forEach(function(s) {
+            _social_defs.forEach(function (s) {
                 var $btn = $('<button type="button" class="wdg-prgr-social-pick-btn" title="' + s.label + '" style="background:none;border:1px solid #ccc;border-radius:4px;padding:4px 6px;margin:2px;cursor:pointer;" data-type="' + s.type + '">');
                 var svgPicker = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svgPicker.setAttribute('width', '20'); svgPicker.setAttribute('height', '20');
-                svgPicker.setAttribute('viewBox', '0 0 24 24'); svgPicker.setAttribute('fill', 'none');
-                svgPicker.setAttribute('stroke', 'currentColor'); svgPicker.setAttribute('stroke-width', '1.5');
-                svgPicker.setAttribute('stroke-linecap', 'round'); svgPicker.setAttribute('stroke-linejoin', 'round');
+                svgPicker.setAttribute('width', '20');
+                svgPicker.setAttribute('height', '20');
+                svgPicker.setAttribute('viewBox', '0 0 24 24');
+                svgPicker.setAttribute('fill', 'none');
+                svgPicker.setAttribute('stroke', 'currentColor');
+                svgPicker.setAttribute('stroke-width', '1.5');
+                svgPicker.setAttribute('stroke-linecap', 'round');
+                svgPicker.setAttribute('stroke-linejoin', 'round');
                 svgPicker.innerHTML = s.paths;
                 $btn.append(svgPicker);
                 $picker.append($btn);
@@ -398,36 +309,55 @@
 
             function updateSocialBtn() {
                 var count = $socialList.find('.wdg-prgr-social-item').length;
-                if (count >= 6) { $addSocialBtn.hide(); } else { $addSocialBtn.show(); }
+                if (count >= 6) {
+                    $addSocialBtn.hide();
+                } else {
+                    $addSocialBtn.show();
+                }
             }
 
             function addSocialItem(type, url) {
-                var def = _social_defs.find(function(s) { return s.type === type; });
-                if (!def) return;
+                var def = _social_defs.find(function (s) {
+                    return s.type === type;
+                });
+                if(!def) return;
                 var $li = $('<li class="wdg-prgr-social-item" data-type="' + type + '" style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">');
                 var $iconSpan = $('<span style="flex-shrink:0;"></span>');
                 var svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svgEl.setAttribute('width', '16'); svgEl.setAttribute('height', '16');
-                svgEl.setAttribute('viewBox', '0 0 24 24'); svgEl.setAttribute('fill', 'none');
-                svgEl.setAttribute('stroke', 'currentColor'); svgEl.setAttribute('stroke-width', '1.5');
-                svgEl.setAttribute('stroke-linecap', 'round'); svgEl.setAttribute('stroke-linejoin', 'round');
+                svgEl.setAttribute('width', '16');
+                svgEl.setAttribute('height', '16');
+                svgEl.setAttribute('viewBox', '0 0 24 24');
+                svgEl.setAttribute('fill', 'none');
+                svgEl.setAttribute('stroke', 'currentColor');
+                svgEl.setAttribute('stroke-width', '1.5');
+                svgEl.setAttribute('stroke-linecap', 'round');
+                svgEl.setAttribute('stroke-linejoin', 'round');
                 svgEl.innerHTML = def.paths;
                 $iconSpan.append(svgEl);
                 $li.append($iconSpan);
                 $li.append('<input type="text" class="listbox wdg-prgr-social-url" placeholder="' + def.label + '" value="' + $('<div>').text(url || '').html() + '" style="flex:1;">');
                 var $del = $('<button type="button" class="ody_builder_content_action btn btn-danger btn-sm" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>');
-                $del.on('click', function() { $li.remove(); $picker.hide(); updateSocialBtn(); });
+                $del.on('click', function () {
+                    $li.remove();
+                    $picker.hide();
+                    updateSocialBtn();
+                });
                 $li.append($del);
                 $socialList.append($li);
                 updateSocialBtn();
             }
 
-            $addSocialBtn.on('click', function() { $picker.toggle(); });
-            $picker.on('click', '.wdg-prgr-social-pick-btn', function() {
+            $addSocialBtn.on('click', function () {
+                $picker.toggle();
+            });
+            $picker.on('click', '.wdg-prgr-social-pick-btn', function () {
                 var type = $(this).data('type');
+                // Check for duplicate
                 var exists = $socialList.find('.wdg-prgr-social-item[data-type="' + type + '"]').length > 0;
-                if (exists) {
-                    var def = _social_defs.find(function(s) { return s.type === type; });
+                if(exists) {
+                    var def = _social_defs.find(function (s) {
+                        return s.type === type;
+                    });
                     alert('<?php echo t("Το"); ?> ' + (def ? def.label : type) + ' <?php echo t("έχει ήδη προστεθεί."); ?>');
                     return;
                 }
@@ -435,95 +365,92 @@
                 $picker.hide();
                 updateSocialBtn();
             });
-
             // Restore saved socials
-            if (itemData.socials) {
+            if(itemData.socials) {
                 var parts = itemData.socials.split('|||');
-                parts.forEach(function(part) {
-                    if (!part.trim()) return;
+                parts.forEach(function (part) {
+                    if(!part.trim()) return;
                     var idx = part.indexOf(':');
-                    if (idx < 0) return;
+                    if(idx < 0) return;
                     var t = part.substring(0, idx);
                     var u = part.substring(idx + 1);
                     addSocialItem(t, u);
                 });
             }
             updateSocialBtn();
-
             $item.append($body);
             $('#wdg_prgr_items_list').append($item);
-
             // Per-item VenoBox + caller tracker
             new VenoBox({selector: '#' + mediaId, fitView: true, ratio: 'full'});
-            $('#' + mediaId).on('click', function() { window._wdg_mediabank_caller = this; });
-
-            // Remove image button
+            $('#' + mediaId).on('click', function () {
+                window._wdg_mediabank_caller = this;
+            });
+            // Remove button
             $('#' + imgId + '_remove').on('click', function() {
                 $('#' + imgId).val('');
                 $('#' + imgId + '_display').text('<?php echo t("Επιλέξτε..."); ?>');
                 $('#' + imgId + '_preview').hide().attr('src', '');
                 $(this).css('visibility', 'hidden');
             });
-
             // Restore saved image
-            if (itemData.image) {
+            if(itemData.image) {
                 $('#' + imgId).val(itemData.image);
                 $('#' + imgId + '_display').text(itemData.image.split('/').pop());
                 $('#' + imgId + '_preview').attr('src', itemData.image).show();
                 $('#' + imgId + '_remove').css('visibility', 'visible');
             }
-
-            // ── Real-time name update ─────────────────────────────────────────
-            $('#' + nameId).on('input', function() {
-                updateItemDisplay($item, nameId);
-            });
-
-            // ── Move buttons ──────────────────────────────────────────────────
-            $item.find('.wdg-prgr-move-up').on('click', function(e) {
-                e.stopPropagation();
-                moveItemUp($item, nameId);
-            });
-            $item.find('.wdg-prgr-move-down').on('click', function(e) {
-                e.stopPropagation();
-                moveItemDown($item, nameId);
-            });
-
-            $item.find('.wdg-item-remove').on('click', function() {
-                $item.fadeOut(200, function() {
+            $item.find('.wdg-item-remove').on('click', function () {
+                $item.fadeOut(200, function () {
                     $item.remove();
                     renumberItems();
                 });
             });
-
-            updateItemDisplay($item, nameId);
+            if($.fn.sortable) {
+                $('#wdg_prgr_items_list').sortable({
+                    handle:      '.wdg-prgr-item-header',
+                    placeholder: 'block-placeholder',
+                    tolerance:   'pointer',
+                    stop:        function () {
+                        renumberItems();
+                    }
+                });
+            }
         }
 
-        _items.forEach(function(item) { addItem(item); });
-        $('#wdg_prgr_add_item_btn').on('click', function() { addItem({}); });
+        function renumberItems() {
+            $('#wdg_prgr_items_list .wdg-prgr-item').each(function (idx) {
+                $(this).find('.wdg-prgr-item-header span').text('<?php echo t("Profile"); ?> ' + (idx + 1));
+            });
+        }
 
-        // ── Label ─────────────────────────────────────────────────────────────
+        _items.forEach(function (item) {
+            addItem(item);
+        });
+        $('#wdg_prgr_add_item_btn').on('click', function () {
+            addItem({});
+        });
+        // ── Label ─────────────────────────────────────────────────────────────────
         label = 'Widget Profile Grid';
         $('#ody_builder_admin_label').val(label);
         $('.ody_builder_header h2').html('Widgetizer — Profile Grid');
-
-        // ── get_block_data ────────────────────────────────────────────────────
-        window.get_block_data = function() {
+        // ── get_block_data ────────────────────────────────────────────────────────
+        window.get_block_data = function () {
             var items = [];
-            $('#wdg_prgr_items_list .wdg-prgr-item').each(function() {
-                var ii  = $(this).data('ii');
+            $('#wdg_prgr_items_list .wdg-prgr-item').each(function () {
+                var ii = $(this).data('ii');
                 var uid = 'prgr_' + ii;
                 items.push({
-                    image:     $('#wdg_prgr_img_'       + uid).val(),
-                    name:      $('#wdg_prgr_name_'      + uid).val(),
-                    role:      $('#wdg_prgr_role_'      + uid).val(),
+                    image:     $('#wdg_prgr_img_' + uid).val(),
+                    name:      $('#wdg_prgr_name_' + uid).val(),
+                    role:      $('#wdg_prgr_role_' + uid).val(),
                     specialty: $('#wdg_prgr_specialty_' + uid).val(),
-                    bio:       $('#wdg_prgr_bio_'       + uid).val(),
-                    socials:   (function() {
+                    bio:       $('#wdg_prgr_bio_' + uid).val(),
+                    socials:   (function () {
                         var parts = [];
-                        $('#wdg_prgr_socials_' + uid + ' .wdg-prgr-social-item').each(function() {
+                        $('#wdg_prgr_socials_' + uid + ' .wdg-prgr-social-item').each(function () {
                             var t = $(this).data('type');
                             var u = $(this).find('.wdg-prgr-social-url').val().trim();
-                            if (t && u) parts.push(t + ':' + u);
+                            if(t && u) parts.push(t + ':' + u);
                         });
                         return parts.join('|||');
                     })()
@@ -531,18 +458,17 @@
             });
             return {
                 widget_id: 'profile_grid',
-                params: {
-                    eyebrow:            $('#wdg_prgr_eyebrow').val(),
-                    title:              $('#wdg_prgr_title').val(),
-                    description:        $('#wdg_prgr_description').val(),
-                    color_scheme:       $('#wdg_prgr_color_scheme').val(),
-                    container_width:    $('#wdg_prgr_container_width').val(),
-                    header_alignment:   $('#wdg_prgr_header_alignment').val(),
-                    layout:             $('#wdg_prgr_layout').val(),
-                    columns:            $('#wdg_prgr_columns').val(),
-                    image_style:        $('#wdg_prgr_image_style').val(),
-                    image_aspect_ratio: $('#wdg_prgr_image_aspect_ratio').val(),
-                    items:              items
+                params:    {
+                    eyebrow:          $('#wdg_prgr_eyebrow').val(),
+                    title:            $('#wdg_prgr_title').val(),
+                    description:      $('#wdg_prgr_description').val(),
+                    color_scheme:     $('#wdg_prgr_color_scheme').val(),
+                    container_width:  $('#wdg_prgr_container_width').val(),
+                    header_alignment: $('#wdg_prgr_header_alignment').val(),
+                    layout:           $('#wdg_prgr_layout').val(),
+                    columns:          $('#wdg_prgr_columns').val(),
+                    image_style:      $('#wdg_prgr_image_style').val(),
+                    items:            items
                 }
             };
         };

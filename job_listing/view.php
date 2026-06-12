@@ -7,12 +7,17 @@
         font-size: .8em !important; background-color: #002e3a; color: white;
         max-width: 400px !important; width: 100% !important; margin: 2px 0 5px;
     }
-    .wdg-jbl-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px; background: #f9f9f9; }
-    .wdg-jbl-item-header { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #002e3a; border-radius: 4px 4px 0 0; cursor: move; }
-    .wdg-jbl-item-header span { color: white; font-size: 12px; flex: 1; }
+    .wdg-jbl-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px; background: #f9f9f9; transition: box-shadow 0.3s ease; }
+    .wdg-jbl-item-header { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #002e3a; border-radius: 4px 4px 0 0; }
+    .wdg-jbl-item-header span { color: white; font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wdg-jbl-item-body { padding: 8px; }
     .wdg-jbl-item-body .ody_builder_parameter { max-width: 100% !important; margin-bottom: 6px; }
-    /*#wdg_jbl_jobs_container { max-width: 700px !important; }*/
+
+    /* ── Βελάκια μετακίνησης ── */
+    .wdg-jbl-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
+    .wdg-jbl-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
+    .wdg-jbl-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .wdg-jbl-move-btn:active { transform: scale(0.9); }
 </style>
 
 <!-- ══ ΓΕΝΙΚΑ ════════════════════════════════════════════════════════════════ -->
@@ -115,6 +120,15 @@ jQuery(function ($) {
     $('#wdg_jbl_color_scheme').val(pval('color_scheme', 'color-scheme-standard-primary'));
     $('#wdg_jbl_container_width').val(pval('container_width', 'xl'));
 
+    function createDeptKey(label) {
+        if (!label || label.trim() === '') return 'other';
+        var key = label.toLowerCase()
+            .replace(/[^a-z\u0370-\u03ff\u1f00-\u1fff\s-]/g, '')
+            .replace(/[\s-]+/g, '-')
+            .replace(/^-|-$/g, '');
+        return key || 'other';
+    }
+
     // ── Link helper ───────────────────────────────────────────────────────────
     window.wdgJblSetLink = function(val, urlFieldId, idx) {
         if (!val || val === 'divider') return;
@@ -132,20 +146,70 @@ jQuery(function ($) {
         $('#wdg_jbl_jobs_list .wdg-jbl-item').each(function() {
             var $it = $(this);
             var idx = $it.data('idx');
-            var deptLabel = $it.find('.wdg-jbl-dept').val();
-            var deptKey   = deptLabel.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+            var deptLabel = $it.find('.wdg-jbl-dept').val() || '';
+            var deptKey = createDeptKey(deptLabel);
             items.push({
-                title:           $it.find('.wdg-jbl-title').val(),
-                department:      deptKey,
-                department_label:deptLabel,
-                location:        $it.find('.wdg-jbl-location').val(),
-                employment_type: $it.find('.wdg-jbl-emp-type').val(),
-                btn_label:       $it.find('.wdg-jbl-btn-label').val(),
-                btn_url:         $('#wdg_jbl_url_' + idx).val(),
-                btn_new_tab:     $it.find('.wdg-jbl-btn-newtab').is(':checked') ? '1' : '0'
+                title:            $it.find('.wdg-jbl-title').val(),
+                department:       deptKey,
+                department_label: deptLabel,
+                location:         $it.find('.wdg-jbl-location').val(),
+                employment_type:  $it.find('.wdg-jbl-emp-type').val(),
+                btn_label:        $it.find('.wdg-jbl-btn-label').val(),
+                btn_url:          $('#wdg_jbl_url_' + idx).val(),
+                btn_new_tab:      $it.find('.wdg-jbl-btn-newtab').is(':checked') ? '1' : '0'
             });
         });
         $('#wdg_jbl_jobs').val(JSON.stringify(items));
+    }
+
+    // ── Item display ──────────────────────────────────────────────────────────
+    function updateItemDisplay($item) {
+        var titleVal = $item.find('.wdg-jbl-title').val();
+        var itemNumber = $item.index() + 1;
+        var displayText = '<?php echo t("Θέση"); ?> ' + itemNumber;
+        if (titleVal && titleVal.trim() !== '') {
+            displayText += ': ' + titleVal;
+        }
+        $item.find('.wdg-jbl-item-header span').text(displayText);
+    }
+
+    function renumberItems() {
+        $('#wdg_jbl_jobs_list .wdg-jbl-item').each(function() {
+            updateItemDisplay($(this));
+        });
+    }
+
+    // ── Move functions ────────────────────────────────────────────────────────
+    function moveItemUp($item) {
+        var $prev = $item.prev('.wdg-jbl-item');
+        if ($prev.length) {
+            $item.slideUp(1, function() {
+                $item.insertBefore($prev);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    saveJobs();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
+    function moveItemDown($item) {
+        var $next = $item.next('.wdg-jbl-item');
+        if ($next.length) {
+            $item.slideUp(1, function() {
+                $item.insertAfter($next);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    saveJobs();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
     }
 
     // ── Add Job ───────────────────────────────────────────────────────────────
@@ -159,6 +223,10 @@ jQuery(function ($) {
         var $item = $('<div class="wdg-jbl-item" data-idx="' + idx + '">');
         $item.append(
             '<div class="wdg-jbl-item-header">' +
+            '<div class="wdg-jbl-move-buttons">' +
+            '<button type="button" class="wdg-jbl-move-btn wdg-jbl-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+            '<button type="button" class="wdg-jbl-move-btn wdg-jbl-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+            '</div>' +
             '<span><?php echo t("Θέση"); ?> ' + ($('#wdg_jbl_jobs_list .wdg-jbl-item').length + 1) + '</span>' +
             '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
             '</div>'
@@ -171,19 +239,16 @@ jQuery(function ($) {
             '<div class="ody_builder_parameter"><label><?php echo t("Τίτλος Θέσης"); ?></label>' +
             '<input type="text" class="listbox wdg-jbl-title" value="' + $('<div>').text(data.title || '').html() + '"></div>'
         );
-
-        // Department (μόνο label — key παράγεται αυτόματα)
+        // Department
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Τμήμα"); ?></label>' +
             '<input type="text" class="listbox wdg-jbl-dept" value="' + $('<div>').text(data.department_label || data.department || '').html() + '"></div>'
         );
-
         // Location
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Τοποθεσία"); ?></label>' +
             '<input type="text" class="listbox wdg-jbl-location" value="' + $('<div>').text(data.location || '').html() + '"></div>'
         );
-
         // Employment type
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Τύπος Απασχόλησης"); ?></label>' +
@@ -194,13 +259,11 @@ jQuery(function ($) {
             '<option value="internship"><?php echo t("Πρακτική Άσκηση"); ?></option>' +
             '</select></div>'
         );
-
         // Button label
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Κείμενο κουμπιού"); ?></label>' +
             '<input type="text" class="listbox wdg-jbl-btn-label" value="' + $('<div>').text(data.btn_label || '<?php echo t("Υποβολή Αίτησης"); ?>').html() + '"></div>'
         );
-
         // Button URL
         $body.append(
             '<div class="ody_builder_parameter"><label>Link</label>' +
@@ -208,8 +271,7 @@ jQuery(function ($) {
             '<select class="selectLink listbox" onchange="wdgJblSetLink($(this).val(), \'' + urlId + '\', ' + idx + '); $(this).val(\'\');">' +
             _page_opts + '</select></div>'
         );
-
-        // New tab checkbox
+        // New tab
         $body.append(
             '<div class="ody_builder_parameter"><div class="admin_checkbox_wrapper" style="margin: 0 0 10px;">' +
             '<input type="checkbox" class="wdg-jbl-btn-newtab" id="wdg_jbl_newtab_' + idx + '" value="1">' +
@@ -227,27 +289,35 @@ jQuery(function ($) {
         new VenoBox({selector: '#' + nodeId, fitView: true, ratio: 'full'});
         new VenoBox({selector: '#' + fileId, fitView: true, ratio: 'full'});
 
-        // Φόρτωση αποθηκευμένων τιμών
         if (data.employment_type) $item.find('.wdg-jbl-emp-type').val(data.employment_type);
         if (data.btn_new_tab == '1') $('#wdg_jbl_newtab_' + idx).prop('checked', true);
 
-        $item.find('.wdg-item-remove').on('click', function() {
-            $item.fadeOut(200, function() { $item.remove(); renumberItems(); saveJobs(); });
+        // ── Real-time title update ────────────────────────────────────────────
+        $item.find('.wdg-jbl-title').on('input', function() {
+            updateItemDisplay($item);
         });
+
+        // ── Move buttons ──────────────────────────────────────────────────────
+        $item.find('.wdg-jbl-move-up').on('click', function(e) {
+            e.stopPropagation();
+            moveItemUp($item);
+        });
+        $item.find('.wdg-jbl-move-down').on('click', function(e) {
+            e.stopPropagation();
+            moveItemDown($item);
+        });
+
+        $item.find('.wdg-item-remove').on('click', function() {
+            $item.fadeOut(200, function() {
+                $item.remove();
+                renumberItems();
+                saveJobs();
+            });
+        });
+
         $item.find('input, textarea, select').on('change input', function() { saveJobs(); });
 
-        if ($.fn.sortable) {
-            $('#wdg_jbl_jobs_list').sortable({
-                handle: '.wdg-jbl-item-header', placeholder: 'block-placeholder',
-                tolerance: 'pointer', update: function() { renumberItems(); saveJobs(); }
-            });
-        }
-    }
-
-    function renumberItems() {
-        $('#wdg_jbl_jobs_list .wdg-jbl-item').each(function(idx) {
-            $(this).find('.wdg-jbl-item-header span').text('<?php echo t("Θέση"); ?> ' + (idx + 1));
-        });
+        updateItemDisplay($item);
     }
 
     // Φόρτωση αποθηκευμένων jobs
@@ -267,14 +337,14 @@ jQuery(function ($) {
         return {
             widget_id: 'job_listing',
             params: {
-                eyebrow:        $('#wdg_jbl_eyebrow').val(),
-                title:          $('#wdg_jbl_title').val(),
-                description:    $('#wdg_jbl_description').val(),
-                header_align:   $('#wdg_jbl_header_align').val(),
-                show_filters:   $('#wdg_jbl_show_filters').is(':checked') ? '1' : '0',
-                color_scheme:   $('#wdg_jbl_color_scheme').val(),
-                container_width:$('#wdg_jbl_container_width').val(),
-                jobs:           $('#wdg_jbl_jobs').val()
+                eyebrow:         $('#wdg_jbl_eyebrow').val(),
+                title:           $('#wdg_jbl_title').val(),
+                description:     $('#wdg_jbl_description').val(),
+                header_align:    $('#wdg_jbl_header_align').val(),
+                show_filters:    $('#wdg_jbl_show_filters').is(':checked') ? '1' : '0',
+                color_scheme:    $('#wdg_jbl_color_scheme').val(),
+                container_width: $('#wdg_jbl_container_width').val(),
+                jobs:            $('#wdg_jbl_jobs').val()
             }
         };
     };

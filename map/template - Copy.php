@@ -5,50 +5,6 @@
  */
 defined('CMS') or die("This file cannot run this way!");
 
-// Helper: [nl] → \n
-if (!function_exists('wdg_restore_nl')) {
-    function wdg_restore_nl($str) {
-        if (!is_string($str)) return '';
-        return str_replace('[nl]', "\n", $str);
-    }
-}
-
-// Helper: Auto-link emails and URLs
-if (!function_exists('wdg_auto_link')) {
-    function wdg_auto_link($text) {
-        if (empty($text)) return $text;
-        
-        // First, protect existing links (avoid double-linking)
-        $text = preg_replace('/<a\s+[^>]*>.*?<\/a>/i', '___LINK_PLACEHOLDER___', $text);
-        
-        // Link emails: name@domain.com → <a href="mailto:...">...</a>
-        $text = preg_replace(
-            '/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/',
-            '<a href="mailto:$1" class="auto-mailto" target="_blank" rel="noopener">$1</a>',
-            $text
-        );
-        
-        // Link URLs: http://, https://
-        $text = preg_replace(
-            '/(https?:\/\/[^\s<]+)/',
-            '<a href="$1" class="auto-url" target="_blank" rel="noopener">$1</a>',
-            $text
-        );
-        
-        // Link URLs: www. (without protocol)
-        $text = preg_replace(
-            '/(?<!\w)(www\.[^\s<]+)/',
-            '<a href="http://$1" class="auto-url" target="_blank" rel="noopener">$1</a>',
-            $text
-        );
-        
-        // Restore protected links
-        $text = str_replace('___LINK_PLACEHOLDER___', '<a', $text);
-        
-        return $text;
-    }
-}
-
 // ── Base assets ───────────────────────────────────────────────────────────────
 $_wdg_assets = 'admin/builder_widget_assets/';
 $_wdg_css    = $_wdg_assets . 'base.css';
@@ -275,11 +231,8 @@ $_wrapper_class = 'map-content-wrapper' . ($_map_position === 'fullwidth' || !$_
                 <?php if ($_map_position !== 'fullwidth' && $_has_sidebar): ?>
                 <div class="map-sidebar">
                     <?php foreach ($_sidebar_items as $i => $_sitem):
-                        $_stitle = htmlspecialchars(wdg_restore_nl($_sitem['title'] ?? ''));
-                        // Restore [nl] → \n, then nl2br, htmlspecialchars, then auto-link
-                        $_stext_raw = wdg_restore_nl($_sitem['text'] ?? '');
-                        $_stext_br = nl2br(htmlspecialchars($_stext_raw, ENT_QUOTES, 'UTF-8'));
-                        $_stext = wdg_auto_link($_stext_br);
+                        $_stitle = htmlspecialchars($_sitem['title'] ?? '');
+                        $_stext  = nl2br(htmlspecialchars($_sitem['text'] ?? ''));
                         if (!$_stitle && !$_stext) continue;
                         $_blk_id = $_widget_id . '_sidebar' . $i;
                     ?>
@@ -288,7 +241,7 @@ $_wrapper_class = 'map-content-wrapper' . ($_map_position === 'fullwidth' || !$_
                         <h3 class="map-sidebar-title w-title t-xl"><?php echo $_stitle; ?></h3>
                         <?php endif; ?>
                         <?php if ($_stext): ?>
-                        <div class="map-sidebar-text w-body w-rte"><?php echo $_stext; ?></div>
+                        <div class="map-sidebar-text w-body w-rte"><p><?php echo $_stext; ?></p></div>
                         <?php endif; ?>
                     </div>
                     <?php endforeach; ?>

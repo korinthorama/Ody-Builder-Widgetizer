@@ -2,11 +2,17 @@
 
 <style>
     .ody_builder_parameter { max-width: 500px !important; }
-    .wdg-numc-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 6px; background: #f0f4f4; }
-    .wdg-numc-item-header { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #002e3a; border-radius: 4px 4px 0 0; cursor: move; }
-    .wdg-numc-item-header span { color: white; font-size: 11px; flex: 1; }
+    .wdg-numc-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 6px; background: #f0f4f4; transition: box-shadow 0.3s ease; }
+    .wdg-numc-item-header { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #002e3a; border-radius: 4px 4px 0 0; }
+    .wdg-numc-item-header span { color: white; font-size: 11px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wdg-numc-item-body { padding: 8px; }
     .wdg-numc-item-body .ody_builder_parameter { max-width: 100% !important; margin-bottom: 5px; }
+
+    /* ── Βελάκια μετακίνησης ── */
+    .wdg-numc-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
+    .wdg-numc-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
+    .wdg-numc-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .wdg-numc-move-btn:active { transform: scale(0.9); }
 </style>
 
 <!-- ══ ΓΕΝΙΚΑ ═══════════════════════════════════════════════════════════════ -->
@@ -105,7 +111,7 @@ jQuery(function ($) {
         return (_p[key] !== undefined && _p[key] !== '') ? _p[key] : (def !== undefined ? def : '');
     }
 
-    // ── Restore scalars ────────────────────────────────────────────────────────
+    // ── Restore scalars ───────────────────────────────────────────────────────
     $('#wdg_numc_eyebrow').val(pval('eyebrow'));
     $('#wdg_numc_title').val(pval('title'));
     $('#wdg_numc_description').val(pval('description'));
@@ -117,17 +123,74 @@ jQuery(function ($) {
     $('#wdg_numc_carousel_cols').val(pval('carousel_cols', '4'));
     $('#wdg_numc_item_alignment').val(pval('item_alignment', 'center'));
 
+    // ── Item display ──────────────────────────────────────────────────────────
+    function updateItemDisplay($item, titleId) {
+        var titleVal = $('#' + titleId).val();
+        var itemNumber = $item.index() + 1;
+        var displayText = '<?php echo t("Κάρτα"); ?> ' + itemNumber;
+        if (titleVal && titleVal.trim() !== '') {
+            displayText += ': ' + titleVal;
+        }
+        $item.find('.wdg-numc-item-header span').text(displayText);
+    }
+
+    function renumberItems() {
+        $('#wdg_numc_items_list .wdg-numc-item').each(function() {
+            var $it = $(this);
+            var ii  = $it.data('ii');
+            var titleId = 'wdg_numc_item_title_numc_' + ii;
+            updateItemDisplay($it, titleId);
+        });
+    }
+
+    // ── Move functions ────────────────────────────────────────────────────────
+    function moveItemUp($item, titleId) {
+        var $prev = $item.prev('.wdg-numc-item');
+        if ($prev.length) {
+            $item.slideUp(1, function() {
+                $item.insertBefore($prev);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
+    function moveItemDown($item, titleId) {
+        var $next = $item.next('.wdg-numc-item');
+        if ($next.length) {
+            $item.slideUp(1, function() {
+                $item.insertAfter($next);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
     // ── Add Item ──────────────────────────────────────────────────────────────
     function addItem(itemData) {
         itemData = itemData || {};
-        var ii  = _item_idx++;
-        var uid = 'numc_' + ii;
+        var ii     = _item_idx++;
+        var uid    = 'numc_' + ii;
+        var titleId = 'wdg_numc_item_title_' + uid;
+        var descId  = 'wdg_numc_item_desc_'  + uid;
 
         var $item = $('<div class="wdg-numc-item" data-ii="' + ii + '">');
         $item.append(
             '<div class="wdg-numc-item-header">' +
-                '<span><?php echo t("Κάρτα"); ?> ' + ($('#wdg_numc_items_list .wdg-numc-item').length + 1) + '</span>' +
-                '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
+            '<div class="wdg-numc-move-buttons">' +
+            '<button type="button" class="wdg-numc-move-btn wdg-numc-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+            '<button type="button" class="wdg-numc-move-btn wdg-numc-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+            '</div>' +
+            '<span><?php echo t("Κάρτα"); ?> ' + ($('#wdg_numc_items_list .wdg-numc-item').length + 1) + '</span>' +
+            '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
             '</div>'
         );
 
@@ -135,39 +198,44 @@ jQuery(function ($) {
 
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Τίτλος"); ?></label>' +
-            '<input type="text" id="wdg_numc_item_title_' + uid + '" class="listbox" value="' + $('<div>').text(itemData.title || '').html() + '"></div>'
+            '<input type="text" id="' + titleId + '" class="listbox" value="' + $('<div>').text(itemData.title || '').html() + '"></div>'
         );
 
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Περιγραφή"); ?></label>' +
-            '<textarea id="wdg_numc_item_desc_' + uid + '" class="listbox" rows="3" style="width:100%; box-sizing:border-box;">' + $('<div>').text(itemData.description || '').html() + '</textarea></div>'
+            '<textarea id="' + descId + '" class="listbox" rows="3" style="width:100%; box-sizing:border-box;">' + $('<div>').text(itemData.description || '').html() + '</textarea></div>'
         );
 
         $item.append($body);
         $('#wdg_numc_items_list').append($item);
 
-        $item.find('.wdg-item-remove').on('click', function () {
-            $item.fadeOut(200, function () { $item.remove(); renumberItems(); });
+        // ── Real-time title update ────────────────────────────────────────────
+        $('#' + titleId).on('input', function() {
+            updateItemDisplay($item, titleId);
         });
 
-        if ($.fn.sortable) {
-            $('#wdg_numc_items_list').sortable({
-                handle: '.wdg-numc-item-header',
-                placeholder: 'block-placeholder',
-                tolerance: 'pointer',
-                stop: function () { renumberItems(); }
+        // ── Move buttons ──────────────────────────────────────────────────────
+        $item.find('.wdg-numc-move-up').on('click', function(e) {
+            e.stopPropagation();
+            moveItemUp($item, titleId);
+        });
+        $item.find('.wdg-numc-move-down').on('click', function(e) {
+            e.stopPropagation();
+            moveItemDown($item, titleId);
+        });
+
+        $item.find('.wdg-item-remove').on('click', function() {
+            $item.fadeOut(200, function() {
+                $item.remove();
+                renumberItems();
             });
-        }
-    }
-
-    function renumberItems() {
-        $('#wdg_numc_items_list .wdg-numc-item').each(function (idx) {
-            $(this).find('.wdg-numc-item-header span').text('<?php echo t("Κάρτα"); ?> ' + (idx + 1));
         });
+
+        updateItemDisplay($item, titleId);
     }
 
-    _items.forEach(function (item) { addItem(item); });
-    $('#wdg_numc_add_item_btn').on('click', function () { addItem({}); });
+    _items.forEach(function(item) { addItem(item); });
+    $('#wdg_numc_add_item_btn').on('click', function() { addItem({}); });
 
     // ── Label ─────────────────────────────────────────────────────────────────
     label = 'Widget Numbered Cards';
@@ -175,9 +243,9 @@ jQuery(function ($) {
     $('.ody_builder_header h2').html('Widgetizer — Numbered Cards');
 
     // ── get_block_data ────────────────────────────────────────────────────────
-    window.get_block_data = function () {
+    window.get_block_data = function() {
         var items = [];
-        $('#wdg_numc_items_list .wdg-numc-item').each(function () {
+        $('#wdg_numc_items_list .wdg-numc-item').each(function() {
             var ii  = $(this).data('ii');
             var uid = 'numc_' + ii;
             items.push({

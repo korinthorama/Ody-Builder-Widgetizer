@@ -52,11 +52,23 @@ if ($_layout === 'carousel' && !in_array($_wdg_carousel, $document->loadedFiles)
     echo '<script src="' . $_wdg_carousel . '" defer></script>' . PHP_EOL;
     $document->loadedFiles[] = $_wdg_carousel;
 }
+if ($_layout === 'carousel') {
+    echo '<script>
+(function(){
+    var src = "' . $_wdg_carousel . '";
+    var scripts = document.querySelectorAll("script[src]");
+    for (var i = 0; i < scripts.length; i++) {
+        if (scripts[i].getAttribute("src") === src) return;
+    }
+    var s = document.createElement("script"); s.src = src; s.defer = true; document.head.appendChild(s);
+})();
+</script>' . PHP_EOL;
+}
 ?>
 
 <section
     id="<?php echo $_widget_id; ?>"
-    class="widget widget-numbered-cards widget-<?php echo $_widget_id; ?> <?php echo $_color . $_layout_class; ?>"
+    class="widget widget-numbered-cards widget-<?php echo $_widget_id; ?> <?php echo $_color . $_layout_class; ?>  no_collapse"
     data-widget-id="<?php echo $_widget_id; ?>"
     data-widget-type="numbered-cards"
     style="<?php echo $_section_style; ?>"
@@ -116,7 +128,7 @@ if ($_layout === 'carousel' && !in_array($_wdg_carousel, $document->loadedFiles)
                         $_num    = str_pad($i + 1, 2, '0', STR_PAD_LEFT);
                     ?>
                     <li class="widget-card carousel-item" data-block-id="<?php echo $_blk_id; ?>">
-                        <div class="widget-card-number"><?php echo $_num; ?></div>
+                        <div class="widget-card-number" style="text-align:<?php echo $_item_alignment; ?>"><?php echo $_num; ?></div>
                         <div class="widget-card-content <?php echo $_align_class; ?>">
                             <?php if ($_ititle): ?>
                             <h3 class="w-title t-xl"><?php echo $_ititle; ?></h3>
@@ -138,7 +150,7 @@ if ($_layout === 'carousel' && !in_array($_wdg_carousel, $document->loadedFiles)
                     $_num    = str_pad($i + 1, 2, '0', STR_PAD_LEFT);
                 ?>
                 <li class="widget-card reveal reveal-up" style="--reveal-delay: <?php echo $i; ?>" data-block-id="<?php echo $_blk_id; ?>">
-                    <div class="widget-card-number"><?php echo $_num; ?></div>
+                    <div class="widget-card-number" style="text-align:<?php echo $_item_alignment; ?>"><?php echo $_num; ?></div>
                     <div class="widget-card-content <?php echo $_align_class; ?>">
                         <?php if ($_ititle): ?>
                         <h3 class="w-title t-xl"><?php echo $_ititle; ?></h3>

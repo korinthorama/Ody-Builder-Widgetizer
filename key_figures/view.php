@@ -2,13 +2,19 @@
 
 <style>
     .ody_builder_parameter { max-width: 500px !important; }
-    .wdg-kfg-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px; background: #f9f9f9; }
-    .wdg-kfg-item-header { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #002e3a; border-radius: 4px 4px 0 0; cursor: move; }
-    .wdg-kfg-item-header span { color: white; font-size: 12px; flex: 1; }
+    .wdg-kfg-item { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px; background: #f9f9f9; transition: box-shadow 0.3s ease; }
+    .wdg-kfg-item-header { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #002e3a; border-radius: 4px 4px 0 0; }
+    .wdg-kfg-item-header span { color: white; font-size: 12px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wdg-kfg-item-body { padding: 8px; }
     .wdg-kfg-item-body .ody_builder_parameter { max-width: 100% !important; margin-bottom: 6px; }
     .wdg-kfg-number-row { display: flex; gap: 8px; }
     .wdg-kfg-number-row .ody_builder_parameter { flex: 1; }
+
+    /* ── Βελάκια μετακίνησης ── */
+    .wdg-kfg-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
+    .wdg-kfg-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
+    .wdg-kfg-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .wdg-kfg-move-btn:active { transform: scale(0.9); }
 </style>
 
 <!-- ══ ΓΕΝΙΚΑ ════════════════════════════════════════════════════════════════ -->
@@ -108,6 +114,56 @@ jQuery(function ($) {
         $('#wdg_kfg_items').val(JSON.stringify(items));
     }
 
+    // ── Item display ──────────────────────────────────────────────────────────
+    function updateItemDisplay($item) {
+        var labelVal = $item.find('.wdg-kfg-label').val();
+        var itemNumber = $item.index() + 1;
+        var displayText = '<?php echo t("Κάρτα"); ?> ' + itemNumber;
+        if (labelVal && labelVal.trim() !== '') {
+            displayText += ': ' + labelVal;
+        }
+        $item.find('.wdg-kfg-item-header span').text(displayText);
+    }
+
+    function renumberItems() {
+        $('#wdg_kfg_items_list .wdg-kfg-item').each(function() {
+            updateItemDisplay($(this));
+        });
+    }
+
+    // ── Move functions ────────────────────────────────────────────────────────
+    function moveItemUp($item) {
+        var $prev = $item.prev('.wdg-kfg-item');
+        if ($prev.length) {
+            $item.slideUp(1, function() {
+                $item.insertBefore($prev);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    saveItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
+    function moveItemDown($item) {
+        var $next = $item.next('.wdg-kfg-item');
+        if ($next.length) {
+            $item.slideUp(1, function() {
+                $item.insertAfter($next);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    saveItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
     // ── Add Item ──────────────────────────────────────────────────────────────
     function addItem(data) {
         data = data || {};
@@ -116,6 +172,10 @@ jQuery(function ($) {
         var $item = $('<div class="wdg-kfg-item" data-idx="' + idx + '">');
         $item.append(
             '<div class="wdg-kfg-item-header">' +
+            '<div class="wdg-kfg-move-buttons">' +
+            '<button type="button" class="wdg-kfg-move-btn wdg-kfg-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+            '<button type="button" class="wdg-kfg-move-btn wdg-kfg-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+            '</div>' +
             '<span><?php echo t("Κάρτα"); ?> ' + ($('#wdg_kfg_items_list .wdg-kfg-item').length + 1) + '</span>' +
             '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
             '</div>'
@@ -145,28 +205,35 @@ jQuery(function ($) {
         $item.append($body);
         $('#wdg_kfg_items_list').append($item);
 
-        $item.find('.wdg-item-remove').on('click', function() {
-            $item.fadeOut(200, function() { $item.remove(); renumberItems(); saveItems(); });
+        // ── Real-time label update ────────────────────────────────────────────
+        $item.find('.wdg-kfg-label').on('input', function() {
+            updateItemDisplay($item);
         });
+
+        // ── Move buttons ──────────────────────────────────────────────────────
+        $item.find('.wdg-kfg-move-up').on('click', function(e) {
+            e.stopPropagation();
+            moveItemUp($item);
+        });
+        $item.find('.wdg-kfg-move-down').on('click', function(e) {
+            e.stopPropagation();
+            moveItemDown($item);
+        });
+
+        $item.find('.wdg-item-remove').on('click', function() {
+            $item.fadeOut(200, function() {
+                $item.remove();
+                renumberItems();
+                saveItems();
+            });
+        });
+
         $item.find('input').on('input change', function() { saveItems(); });
 
-        if ($.fn.sortable) {
-            $('#wdg_kfg_items_list').sortable({
-                handle: '.wdg-kfg-item-header',
-                placeholder: 'block-placeholder',
-                tolerance: 'pointer',
-                update: function() { renumberItems(); saveItems(); }
-            });
-        }
+        updateItemDisplay($item);
     }
 
-    function renumberItems() {
-        $('#wdg_kfg_items_list .wdg-kfg-item').each(function(idx) {
-            $(this).find('.wdg-kfg-item-header span').text('<?php echo t("Κάρτα"); ?> ' + (idx + 1));
-        });
-    }
-
-    // Φόρτωση αποθηκευμένων items — έρχεται ως JSON string
+    // Φόρτωση αποθηκευμένων items
     var _saved = pval('items');
     if (_saved) {
         try { JSON.parse(_saved).forEach(function(it) { addItem(it); }); } catch(e) {}
@@ -183,14 +250,14 @@ jQuery(function ($) {
         return {
             widget_id: 'key_figures',
             params: {
-                eyebrow:        $('#wdg_kfg_eyebrow').val(),
-                title:          $('#wdg_kfg_title').val(),
-                description:    $('#wdg_kfg_description').val(),
-                columns:        $('#wdg_kfg_columns').val(),
-                card_layout:    $('#wdg_kfg_card_layout').val(),
-                color_scheme:   $('#wdg_kfg_color_scheme').val(),
-                container_width:$('#wdg_kfg_container_width').val(),
-                items:          $('#wdg_kfg_items').val()
+                eyebrow:         $('#wdg_kfg_eyebrow').val(),
+                title:           $('#wdg_kfg_title').val(),
+                description:     $('#wdg_kfg_description').val(),
+                columns:         $('#wdg_kfg_columns').val(),
+                card_layout:     $('#wdg_kfg_card_layout').val(),
+                color_scheme:    $('#wdg_kfg_color_scheme').val(),
+                container_width: $('#wdg_kfg_container_width').val(),
+                items:           $('#wdg_kfg_items').val()
             }
         };
     };

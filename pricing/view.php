@@ -20,12 +20,12 @@ $_prng_page_opts .= '<option value="fileLinks_prng">' . t("Link για αρχε�
 
 <style>
     .ody_builder_parameter { max-width: 500px !important; }
-    .wdg-prng-card { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px; background: #f0f4f4; }
-    .wdg-prng-card-header { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #002e3a; border-radius: 4px 4px 0 0; cursor: move; }
-    .wdg-prng-card-header span { color: white; font-size: 11px; flex: 1; }
+    .wdg-prng-card { border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px; background: #f0f4f4; transition: box-shadow 0.3s ease; }
+    .wdg-prng-card-header { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #002e3a; border-radius: 4px 4px 0 0; }
+    .wdg-prng-card-header span { color: white; font-size: 11px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .wdg-prng-card-body { padding: 8px; }
     .wdg-prng-card-body .ody_builder_parameter { max-width: 100% !important; margin-bottom: 5px; }
-    .wdg-prng-features-list { list-style: none; padding: 0; margin: 6px 0; clear:both}
+    .wdg-prng-features-list { list-style: none; padding: 0; margin: 6px 0; clear: both; }
     .wdg-prng-feature-item { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
     .wdg-prng-feature-item input { flex: 1; }
     .wdg-prng-feature-item button {
@@ -49,6 +49,12 @@ $_prng_page_opts .= '<option value="fileLinks_prng">' . t("Link για αρχε�
         margin: 2px 0 5px;
         box-sizing: border-box;
     }
+
+    /* ── Βελάκια μετακίνησης ── */
+    .wdg-prng-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
+    .wdg-prng-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
+    .wdg-prng-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .wdg-prng-move-btn:active { transform: scale(0.9); }
 </style>
 
 <!-- ══ ΓΕΝΙΚΑ ═══════════════════════════════════════════════════════════════ -->
@@ -113,12 +119,12 @@ $_prng_page_opts .= '<option value="fileLinks_prng">' . t("Link για αρχε�
     </select>
 </div>
 
-<!-- ══ PLANS ═════════════════════════════════════════════════════════════════ -->
-<div class="wdg-section-title"><?php echo t("Plans"); ?></div>
-<div id="wdg_prng_cards_list"></div>
+<!-- ══ ΥΠΗΡΕΣΙΕΣ ════════════════════════════════════════════════════════════ -->
+<div class="wdg-section-title"><?php echo t("Υπηρεσίες"); ?></div>
+<div id="wdg_prng_cards_list" style="max-width: 420px"></div>
 <div class="ody_builder_parameter">
     <button type="button" id="wdg_prng_add_card_btn" class="ody_builder_content_action btn btn-success">
-        + <?php echo t("Προσθήκη"); ?> Plan
+        + <?php echo t("Προσθήκη υπηρεσίας"); ?>
     </button>
 </div>
 
@@ -135,7 +141,7 @@ jQuery(function ($) {
         return (_p[key] !== undefined && _p[key] !== '') ? _p[key] : (def !== undefined ? def : '');
     }
 
-    // ── Restore scalars ────────────────────────────────────────────────────────
+    // ── Restore scalars ───────────────────────────────────────────────────────
     $('#wdg_prng_eyebrow').val(pval('eyebrow'));
     $('#wdg_prng_title').val(pval('title'));
     $('#wdg_prng_description').val(pval('description'));
@@ -145,7 +151,7 @@ jQuery(function ($) {
     $('#wdg_prng_layout').val(pval('layout', 'grid'));
     $('#wdg_prng_columns').val(pval('columns', '3'));
 
-    // ── wdgPrngSetLink ─────────────────────────────────────────────────────────
+    // ── wdgPrngSetLink ────────────────────────────────────────────────────────
     window.wdgPrngSetLink = function(val, urlFieldId, idx) {
         if (!val || val === 'divider') return;
         if (val === 'nodeLinks_prng') { document.getElementById('wdg_prng_node_popup_' + idx).click(); return; }
@@ -165,6 +171,57 @@ jQuery(function ($) {
         });
     }
 
+    // ── Card display ──────────────────────────────────────────────────────────
+    function updateCardDisplay($card, titleId) {
+        var titleVal = $('#' + titleId).val();
+        var cardNumber = $card.index() + 1;
+        var displayText = '<?php echo t("Υπηρεσία"); ?> ' + cardNumber;
+        if (titleVal && titleVal.trim() !== '') {
+            displayText += ': ' + titleVal;
+        }
+        $card.find('.wdg-prng-card-header span').text(displayText);
+    }
+
+    function renumberCards() {
+        $('#wdg_prng_cards_list .wdg-prng-card').each(function() {
+            var $c   = $(this);
+            var ci   = $c.data('ci');
+            var titleId = 'wdg_prng_title_prng_' + ci;
+            updateCardDisplay($c, titleId);
+        });
+    }
+
+    // ── Move functions ────────────────────────────────────────────────────────
+    function moveCardUp($card, titleId) {
+        var $prev = $card.prev('.wdg-prng-card');
+        if ($prev.length) {
+            $card.slideUp(1, function() {
+                $card.insertBefore($prev);
+                $card.slideDown(1, function() {
+                    renumberCards();
+                    $('html, body').animate({ scrollTop: $card.offset().top - 100 }, 300);
+                    $card.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $card.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
+    function moveCardDown($card, titleId) {
+        var $next = $card.next('.wdg-prng-card');
+        if ($next.length) {
+            $card.slideUp(1, function() {
+                $card.insertAfter($next);
+                $card.slideDown(1, function() {
+                    renumberCards();
+                    $('html, body').animate({ scrollTop: $card.offset().top - 100 }, 300);
+                    $card.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $card.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
     // ── addCard ───────────────────────────────────────────────────────────────
     function addCard(cardData) {
         cardData = cardData || {};
@@ -172,14 +229,19 @@ jQuery(function ($) {
         var uid    = 'prng_' + ci;
         var urlId  = 'wdg_prng_url_'    + uid;
         var tabId  = 'wdg_prng_newtab_' + uid;
+        var titleId = 'wdg_prng_title_' + uid;
         var nodePop = 'wdg_prng_node_popup_' + ci;
         var filePop = 'wdg_prng_file_popup_' + ci;
 
         var $card = $('<div class="wdg-prng-card" data-ci="' + ci + '">');
         $card.append(
             '<div class="wdg-prng-card-header">' +
-                '<span><?php echo t("Plan"); ?> ' + ($('#wdg_prng_cards_list .wdg-prng-card').length + 1) + '</span>' +
-                '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
+            '<div class="wdg-prng-move-buttons">' +
+            '<button type="button" class="wdg-prng-move-btn wdg-prng-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+            '<button type="button" class="wdg-prng-move-btn wdg-prng-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+            '</div>' +
+            '<span><?php echo t("Υπηρεσία"); ?> ' + ($('#wdg_prng_cards_list .wdg-prng-card').length + 1) + '</span>' +
+            '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
             '</div>'
         );
 
@@ -190,14 +252,14 @@ jQuery(function ($) {
             '<div class="ody_builder_parameter">' +
             '<div class="admin_checkbox_wrapper" style="margin: 0 0 10px;">' +
             '<input type="checkbox" id="wdg_prng_featured_' + uid + '" value="1">' +
-            '<p><?php echo t("Featured (επισημασμένο plan)"); ?></p>' +
+            '<p><?php echo t("Προτεινόμενη υπηρεσία (Featured)"); ?></p>' +
             '</div></div>'
         );
 
         // Title
         $body.append(
-            '<div class="ody_builder_parameter"><label><?php echo t("Τίτλος του plan"); ?></label>' +
-            '<input type="text" id="wdg_prng_title_' + uid + '" class="listbox" value="' + $('<div>').text(cardData.title || '').html() + '"></div>'
+            '<div class="ody_builder_parameter"><label><?php echo t("Τίτλος της υπηρεσίας"); ?></label>' +
+            '<input type="text" id="' + titleId + '" class="listbox" value="' + $('<div>').text(cardData.title || '').html() + '"></div>'
         );
 
         // Price
@@ -214,9 +276,9 @@ jQuery(function ($) {
 
         // Features
         $body.append(
-            '<div class="ody_builder_parameter"><label><?php echo t("Χαρακτηριστικά"); ?></label>' +
+            '<div class="ody_builder_parameter"><label><?php echo t("Δυνατότητες"); ?></label>' +
             '<ul class="wdg-prng-features-list" id="wdg_prng_features_' + uid + '"></ul>' +
-            '<button type="button" class="ody_builder_content_action btn btn-success btn-sm wdg-prng-add-feature" style="margin-top:4px;">+ <?php echo t("Προσθήκη Feature"); ?></button>' +
+            '<button type="button" class="ody_builder_content_action btn btn-success btn-sm wdg-prng-add-feature" style="margin-top:4px;">+ <?php echo t("Προσθήκη δυνατότητας"); ?></button>' +
             '</div>'
         );
 
@@ -230,8 +292,8 @@ jQuery(function ($) {
         $body.append(
             '<div class="ody_builder_parameter"><label>Link</label>' +
             '<input type="text" id="' + urlId + '" class="listbox" value="' + $('<div>').text(cardData.button_url || '').html() + '">' +
-            '<select class="selectLink listbox" onchange="wdgPrngSetLink($(this).val(), \'' + urlId + '\', ' + ci + '); $(this).val(\'\');">' +
-                _page_opts +
+            '<select style="max-width: 400px" class="selectLink listbox" onchange="wdgPrngSetLink($(this).val(), \'' + urlId + '\', ' + ci + '); $(this).val(\'\');">' +
+            _page_opts +
             '</select></div>'
         );
 
@@ -271,24 +333,29 @@ jQuery(function ($) {
             addFeature($featureList, '');
         });
 
+        // ── Real-time title update ────────────────────────────────────────────
+        $('#' + titleId).on('input', function() {
+            updateCardDisplay($card, titleId);
+        });
+
+        // ── Move buttons ──────────────────────────────────────────────────────
+        $card.find('.wdg-prng-move-up').on('click', function(e) {
+            e.stopPropagation();
+            moveCardUp($card, titleId);
+        });
+        $card.find('.wdg-prng-move-down').on('click', function(e) {
+            e.stopPropagation();
+            moveCardDown($card, titleId);
+        });
+
         $card.find('.wdg-item-remove').on('click', function() {
-            $card.fadeOut(200, function() { $card.remove(); renumberCards(); });
-        });
-
-        if ($.fn.sortable) {
-            $('#wdg_prng_cards_list').sortable({
-                handle: '.wdg-prng-card-header',
-                placeholder: 'block-placeholder',
-                tolerance: 'pointer',
-                stop: function() { renumberCards(); }
+            $card.fadeOut(200, function() {
+                $card.remove();
+                renumberCards();
             });
-        }
-    }
-
-    function renumberCards() {
-        $('#wdg_prng_cards_list .wdg-prng-card').each(function(idx) {
-            $(this).find('.wdg-prng-card-header span').text('Plan ' + (idx + 1));
         });
+
+        updateCardDisplay($card, titleId);
     }
 
     _items.forEach(function(item) { addCard(item); });
