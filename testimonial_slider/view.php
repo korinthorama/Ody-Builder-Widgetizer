@@ -15,6 +15,7 @@
         border-radius: 4px;
         margin-bottom: 8px;
         background: #f0f4f4;
+        transition: box-shadow 0.3s ease;
     }
 
     .wdg-tesl-item-header {
@@ -24,13 +25,39 @@
         padding: 5px 8px;
         background: #002e3a;
         border-radius: 4px 4px 0 0;
-        cursor: move;
     }
 
     .wdg-tesl-item-header span {
         color: white;
         font-size: 11px;
         flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .wdg-tesl-move-buttons {
+        display: flex;
+        gap: 4px;
+        margin-right: 4px;
+    }
+
+    .wdg-tesl-move-btn {
+        background: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 11px;
+        padding: 0 2px;
+        line-height: 1;
+    }
+
+    .wdg-tesl-move-btn:hover {
+        color: #fbbf24;
+    }
+
+    .wdg-tesl-move-btn:active {
+        color: #f59e0b;
     }
 
     .wdg-tesl-item-body {
@@ -232,7 +259,11 @@ jQuery(function ($) {
         var $item = $('<div class="wdg-tesl-item" data-ii="' + ii + '">');
         $item.append(
             '<div class="wdg-tesl-item-header">' +
-            '<span><?php echo t("Γνώμη"); ?> ' + ($('#wdg_tesl_items_list .wdg-tesl-item').length + 1) + '</span>' +
+            '<div class="wdg-tesl-move-buttons">' +
+            '<button type="button" class="wdg-tesl-move-btn wdg-tesl-move-up">▲</button>' +
+            '<button type="button" class="wdg-tesl-move-btn wdg-tesl-move-down">▼</button>' +
+            '</div>' +
+            '<span class="wdg-tesl-title-display"></span>' +
             '<button type="button" class="wdg-item-remove" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
             '</div>'
         );
@@ -328,24 +359,65 @@ jQuery(function ($) {
             });
         });
         
-        // ── Sortable ─────────────────────────────────────────────────────────
-        if ($.fn.sortable) {
-            $('#wdg_tesl_items_list').sortable({
-                handle: '.wdg-tesl-item-header',
-                placeholder: 'block-placeholder',
-                tolerance: 'pointer',
-                stop: function () {
-                    renumberItems();
-                }
+        // ── Move buttons ─────────────────────────────────────────────────────
+        $item.find('.wdg-tesl-move-up').on('click', function (e) {
+            e.stopPropagation();
+            moveTeslUp($item);
+        });
+        $item.find('.wdg-tesl-move-down').on('click', function (e) {
+            e.stopPropagation();
+            moveTeslDown($item);
+        });
+
+        // ── Name input → update display ──────────────────────────────────────
+        $('#wdg_tesl_name_' + uid).on('input', function () {
+            updateTeslDisplay($item);
+        });
+
+        updateTeslDisplay($item);
+    }
+
+    function updateTeslDisplay($item) {
+        var ii = $item.data('ii');
+        var uid = 'tesl_' + ii;
+        var n = $item.index() + 1;
+        var name = $('#wdg_tesl_name_' + uid).val();
+        var label = '<?php echo t("Γνώμη"); ?> ' + n + (name ? ': ' + name : '');
+        $item.find('.wdg-tesl-title-display').text(label);
+    }
+
+    function moveTeslUp($item) {
+        var $prev = $item.prev('.wdg-tesl-item');
+        if (!$prev.length) return;
+        $item.slideUp(1, function () {
+            $item.insertBefore($prev);
+            $item.slideDown(1, function () {
+                renumberItems();
+                $('html, body').animate({scrollTop: $item.offset().top - 100}, 300);
+                $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                setTimeout(function () { $item.css('box-shadow', ''); }, 600);
             });
-        }
+        });
+    }
+
+    function moveTeslDown($item) {
+        var $next = $item.next('.wdg-tesl-item');
+        if (!$next.length) return;
+        $item.slideUp(1, function () {
+            $item.insertAfter($next);
+            $item.slideDown(1, function () {
+                renumberItems();
+                $('html, body').animate({scrollTop: $item.offset().top - 100}, 300);
+                $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                setTimeout(function () { $item.css('box-shadow', ''); }, 600);
+            });
+        });
     }
 
     function renumberItems() {
-        var items = $('#wdg_tesl_items_list .wdg-tesl-item');
-        for (var i = 0; i < items.length; i++) {
-            $(items[i]).find('.wdg-tesl-item-header span').text('<?php echo t("Γνώμη"); ?> ' + (i + 1));
-        }
+        $('#wdg_tesl_items_list .wdg-tesl-item').each(function () {
+            updateTeslDisplay($(this));
+        });
     }
 
     // ── Restore testimonials ─────────────────────────────────────────────────

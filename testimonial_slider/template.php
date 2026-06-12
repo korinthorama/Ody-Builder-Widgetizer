@@ -78,7 +78,7 @@ if (!$_full_width && $_max_width) {
 
 <section
     id="<?php echo $_widget_id; ?>"
-    class="widget widget-type-testimonial-slider widget-<?php echo $_widget_id; ?> <?php echo $_color; ?>"
+    class="widget widget-type-testimonial-slider widget-<?php echo $_widget_id; ?> <?php echo $_color; ?> no_collapse"
     data-widget-id="<?php echo $_widget_id; ?>"
     data-widget-type="testimonial-slider"
     data-autoplay="<?php echo $_autoplay; ?>"

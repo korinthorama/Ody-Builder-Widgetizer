@@ -2,7 +2,7 @@
 /*
  * Widgetizer — Scrolling Text Widget — template.php
  * Prefix: scrt
- * Refactored: Pure PHP output, flat CSS, single section, no DOMDocument
+ * Refactored: Pure PHP output, flat CSS, single track, no JS cloning
  */
 
 // ── Assets ────────────────────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ $_widget_id    = 'widget_' . $blockID;
 $_widget_class = 'widget_' . $blockID;
 $_keyframe_name = 'scroll-x-' . $_widget_class;
 
-// ── Build strips HTML ─────────────────────────────────────────────────────────
+// ── Build strips HTML (single track, no JS clone) ─────────────────────────────
 $_strips_html = '';
 foreach ($_items as $_si => $_strip_data) {
     $_text            = htmlspecialchars($_strip_data['text']            ?? '');
@@ -65,9 +65,9 @@ foreach ($_items as $_si => $_strip_data) {
     
     $_track_style = '--scroll-duration: ' . $_scroll_duration . 's;';
     
-    // Build track with 20 repeats (like original)
+    // Single track with enough repeats for seamless scrolling (30-40 repeats)
     $_track_html = '';
-    for ($_i = 0; $_i < 20; $_i++) {
+    for ($_i = 0; $_i < 35; $_i++) {
         $_track_html .= '<span class="scrolling-item">' . $_text . '</span>';
         $_track_html .= '<span class="scrolling-separator">' . $_separator . '</span>';
     }
@@ -75,7 +75,7 @@ foreach ($_items as $_si => $_strip_data) {
     $_strips_html .= '
     <div class="scrolling-strip-wrapper" style="' . $_strip_style . '">
         <div class="scrolling-strip" aria-label="' . $_text . '">
-            <div class="scrolling-track-inner" style="' . $_track_style . '" aria-hidden="true">
+            <div class="scrolling-track-inner" style="' . $_track_style . '">
                 <div class="scrolling-track">
                     ' . $_track_html . '
                 </div>
@@ -119,8 +119,6 @@ $_sec_style = 'padding-bottom: 20px;';
             transform: rotate(var(--strip-rotate, 0deg));
             padding-block: var(--space-lg);
             overflow: hidden;
-            width: 200%;
-            margin-inline: -50%;
         }
 
         .widget-<?php echo $_widget_class; ?> .scrolling-track-inner {
@@ -167,29 +165,3 @@ $_sec_style = 'padding-bottom: 20px;';
         <?php echo $_strips_html; ?>
     </div>
 </section>
-
-<?php
-// ── Inline JS for cloning each strip ─────────────────────────────────────────
-$_js = <<<JSEOF
-<script>
-(function() {
-    var widget = document.getElementById("{$_widget_id}");
-    if (!widget || widget.dataset.scrtInit) return;
-    widget.dataset.scrtInit = "true";
-    
-    var strips = widget.querySelectorAll(".scrolling-strip");
-    for (var s = 0; s < strips.length; s++) {
-        var strip = strips[s];
-        var inner = strip.querySelector(".scrolling-track-inner");
-        var track = strip.querySelector(".scrolling-track");
-        if (!inner || !track) continue;
-        
-        var clone = track.cloneNode(true);
-        clone.setAttribute("aria-hidden", "true");
-        inner.appendChild(clone);
-    }
-})();
-</script>
-JSEOF;
-
-echo $_js;

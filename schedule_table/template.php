@@ -3,6 +3,7 @@
  * Widgetizer — Schedule Table Widget — template.php
  * Prefix: sct
  * Refactored: Pure PHP output, flat CSS, no DOMDocument
+ * Supports continuous + discontinuous (two periods) with bold separator |
  */
 
 // ── Assets ────────────────────────────────────────────────────────────────────
@@ -55,15 +56,43 @@ $_week_order_monday = ['monday','tuesday','wednesday','thursday','friday','satur
 $_week_order_sunday = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
 $_week_order = ($_week_start === 'sunday') ? $_week_order_sunday : $_week_order_monday;
 
-// ── Helper: format time ───────────────────────────────────────────────────────
+// ── Helper: format time with 12‑hour conversion for AM/PM ─────────────────────
 if (!function_exists('_wdg_sct_format_time')) {
     function _wdg_sct_format_time(string $h, string $m, string $fmt): string {
         if ($h === '') return '';
-        $m_pad = str_pad($m, 2, '0', STR_PAD_LEFT);
+        $hour = (int)$h;
+        $min = str_pad($m, 2, '0', STR_PAD_LEFT);
+        
         if ($fmt === '24') {
-            return str_pad($h, 2, '0', STR_PAD_LEFT) . ':' . $m_pad;
+            return str_pad($hour, 2, '0', STR_PAD_LEFT) . ':' . $min;
         }
-        return $h . ':' . $m_pad . ' ' . ($fmt === 'AM' ? 'ΠΜ' : 'ΜΜ');
+        
+        // Convert to 12-hour format for AM/PM
+        $suffix = ($fmt === 'AM') ? 'ΠΜ' : 'ΜΜ';
+        $hour12 = $hour % 12;
+        if ($hour12 === 0) $hour12 = 12;
+        return $hour12 . ':' . $min . ' ' . $suffix;
+    }
+}
+
+// ── Helper: format periods into HTML with bold separator ─────────────────────
+if (!function_exists('_wdg_sct_format_periods')) {
+    function _wdg_sct_format_periods(array $periods): string {
+        $parts = [];
+        foreach ($periods as $p) {
+            $open = _wdg_sct_format_time($p['open_h'] ?? '', $p['open_m'] ?? '', $p['open_f'] ?? '24');
+            $close = _wdg_sct_format_time($p['close_h'] ?? '', $p['close_m'] ?? '', $p['close_f'] ?? '24');
+            if ($open && $close) {
+                $parts[] = htmlspecialchars($open . ' – ' . $close);
+            } elseif ($open) {
+                $parts[] = htmlspecialchars($open);
+            } elseif ($close) {
+                $parts[] = htmlspecialchars($close);
+            }
+        }
+        // Bold separator with spaces
+        $separator = '<span class="schedule-separator"> + </span>';
+        return implode($separator, $parts);
     }
 }
 
@@ -84,18 +113,27 @@ foreach ($_week_order as $_day_key) {
     if ($_is_closed) {
         $_row_html .= '<span class="schedule-closed w-body t-muted">' . t('Κλειστό') . '</span>';
     } else {
-        $_open  = _wdg_sct_format_time(
-            $_day_data['open_h']  ?? '9',
-            $_day_data['open_m']  ?? '0',
-            $_day_data['open_f']  ?? '24'
-        );
-        $_close = _wdg_sct_format_time(
-            $_day_data['close_h'] ?? '21',
-            $_day_data['close_m'] ?? '0',
-            $_day_data['close_f'] ?? '24'
-        );
-        $_hours = ($_open && $_close) ? $_open . ' – ' . $_close : ($_open ?: $_close);
-        $_row_html .= '<span class="schedule-value w-body t-heading">' . htmlspecialchars($_hours) . '</span>';
+        // Read periods (supports both new and old data structure)
+        $_periods = $_day_data['periods'] ?? [];
+        
+        // Backward compatibility: convert old single‑period fields
+        if (empty($_periods) && (isset($_day_data['open_h']) || isset($_day_data['close_h']))) {
+            $_periods = [[
+                'open_h'  => $_day_data['open_h']  ?? '',
+                'open_m'  => $_day_data['open_m']  ?? '',
+                'open_f'  => $_day_data['open_f']  ?? '24',
+                'close_h' => $_day_data['close_h'] ?? '',
+                'close_m' => $_day_data['close_m'] ?? '',
+                'close_f' => $_day_data['close_f'] ?? '24',
+            ]];
+        }
+        
+        // Format periods (returns HTML with bold separator)
+        $_hours_html = _wdg_sct_format_periods($_periods);
+        if ($_hours_html === '') {
+            $_hours_html = t('Κλειστό'); // fallback
+        }
+        $_row_html .= '<span class="schedule-value w-body t-heading">' . $_hours_html . '</span>';
     }
     $_row_html .= '</div>';
     
@@ -140,7 +178,7 @@ if (!$_full_width && $_max_width) {
 <?php echo $_wdg_asset_html; ?>
 <section
     id="<?php echo $_widget_id; ?>"
-    class="widget widget-schedule-table widget-<?php echo $_widget_class; ?> <?php echo $_color . $_align_class . $_reverse_class; ?>"
+    class="widget widget-schedule-table widget-<?php echo $_widget_class; ?> <?php echo $_color . $_align_class . $_reverse_class; ?> no_collapse"
     data-widget-id="<?php echo $_widget_id; ?>"
     data-widget-type="schedule-table"
     data-week-start="<?php echo $_week_start; ?>"
@@ -170,6 +208,11 @@ if (!$_full_width && $_max_width) {
         .widget-<?php echo $_widget_class; ?> .schedule-row.is-today .schedule-label,
         .widget-<?php echo $_widget_class; ?> .schedule-row.is-today .schedule-value {
             font-weight: var(--font-weight-semibold);
+        }
+        .widget-<?php echo $_widget_class; ?> .schedule-separator {
+            font-weight: bold;
+            margin: 0 4px;
+            color: red;
         }
         .widget-<?php echo $_widget_class; ?> .schedule-note {
             margin-block-start: var(--space-lg);

@@ -9,6 +9,7 @@
         border-radius: 4px;
         margin-bottom: 6px;
         background: #f0f4f4;
+        transition: box-shadow 0.3s ease;
     }
 
     .wdg-rlst-item-header {
@@ -18,13 +19,15 @@
         padding: 5px 8px;
         background: #002e3a;
         border-radius: 4px 4px 0 0;
-        cursor: move;
     }
 
     .wdg-rlst-item-header span {
         color: white;
         font-size: 11px;
         flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .wdg-rlst-item-body {
@@ -59,6 +62,12 @@
         display: none;
         border: 1px solid #ddd;
     }
+
+    /* ── Βελάκια μετακίνησης ── */
+    .wdg-rlst-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
+    .wdg-rlst-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
+    .wdg-rlst-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .wdg-rlst-move-btn:active { transform: scale(0.9); }
 </style>
 <!-- ══ ΓΕΝΙΚΑ ═══════════════════════════════════════════════════════════════ -->
 <div class="wdg-section-title"><?php echo t("Γενικά"); ?></div>
@@ -148,7 +157,7 @@
             return (_p[key] !== undefined && _p[key] !== '') ? _p[key] : (def !== undefined ? def : '');
         }
 
-        // ── Restore scalars ────────────────────────────────────────────────────────
+        // ── Restore scalars ───────────────────────────────────────────────────
         $('#wdg_rlst_eyebrow').val(pval('eyebrow'));
         $('#wdg_rlst_title').val(pval('title'));
         $('#wdg_rlst_description').val(pval('description'));
@@ -156,44 +165,46 @@
         $('#wdg_rlst_container_width').val(pval('container_width', 'xl'));
         $('#wdg_rlst_header_align').val(pval('header_align', 'center'));
         $('#wdg_rlst_image_position').val(pval('image_position', 'start'));
-        // ── Section image restore ──────────────────────────────────────────────────
+
+        // ── Section image restore ─────────────────────────────────────────────
         var _savedImg = pval('image', '');
-        if(_savedImg) {
+        if (_savedImg) {
             $('#wdg_rlst_image').val(_savedImg);
             $('#wdg_rlst_image_display').text(_savedImg.split('/').pop());
             $('#wdg_rlst_image_preview').attr('src', _savedImg).show();
             $('#wdg_rlst_image_remove').css('visibility', 'visible');
         }
-        // ── VenoBox section image ──────────────────────────────────────────────────
+
+        // ── VenoBox section image ─────────────────────────────────────────────
         window.venobox = new VenoBox({selector: '.wdg-rlst-select-media', fitView: true, ratio: 'full'});
-        $('#wdg_rlst_select_media_btn').on('click', function () {
-            window._wdg_mediabank_caller = this;
-        });
+        $('#wdg_rlst_select_media_btn').on('click', function() { window._wdg_mediabank_caller = this; });
         $('#wdg_rlst_image_remove').on('click', function() {
             $('#wdg_rlst_image').val('');
             $('#wdg_rlst_image_display').text('<?php echo t("Επιλέξτε..."); ?>');
             $('#wdg_rlst_image_preview').hide().attr('src', '');
             $(this).css('visibility', 'hidden');
         });
-        window.odyRecieveMediabank = function (file, id, ext, image_path, callerEl) {
+
+        window.odyRecieveMediabank = function(file, id, ext, image_path, callerEl) {
             var targetId = $(callerEl || window._wdg_mediabank_caller).data('wdg-target');
-            if(!targetId) return;
+            if (!targetId) return;
             var fullPath = image_path + id + '.' + ext;
             $('#' + targetId).val(fullPath);
             $('#' + targetId + '_display').text(file);
             $('#' + targetId + '_preview').attr('src', fullPath).show();
             $('#' + targetId + '_remove').css('visibility', 'visible');
         };
-        // ── wdgRlstSetLink ─────────────────────────────────────────────────────────
+
+        // ── wdgRlstSetLink ────────────────────────────────────────────────────
         var _rlst_active_url_id = null;
-        window.wdgRlstSetLink = function (val, urlFieldId, idx) {
-            if(!val || val === 'divider') return;
-            if(val === 'nodeLinks_rlst') {
+        window.wdgRlstSetLink = function(val, urlFieldId, idx) {
+            if (!val || val === 'divider') return;
+            if (val === 'nodeLinks_rlst') {
                 window.venobox = new VenoBox({selector: '#wdg_rlst_node_popup_' + idx, fitView: true, ratio: 'full'});
                 document.getElementById('wdg_rlst_node_popup_' + idx).click();
                 return;
             }
-            if(val === 'fileLinks_rlst') {
+            if (val === 'fileLinks_rlst') {
                 _rlst_active_url_id = urlFieldId;
                 window.venobox = new VenoBox({selector: '#wdg_rlst_file_popup_' + idx, fitView: true, ratio: 'full'});
                 document.getElementById('wdg_rlst_file_popup_' + idx).click();
@@ -202,123 +213,188 @@
             var link = (val === 'homepage') ? 'index.php' : '««index.php?section=pages~|||~view=render~|||~id=' + val + '»»';
             $('#' + urlFieldId).val(link);
         };
-        // ── Παρακολούθηση hidden input μετά επιλογή αρχείου ───────────────────────
+
+        // ── File observer ─────────────────────────────────────────────────────
         var _rlst_file_observer_timer = null;
         window.startFileObserver = function startFileObserver() {
-            if(!_rlst_active_url_id) return;
+            if (!_rlst_active_url_id) return;
             var targetId = _rlst_active_url_id;
             var lastVal = $('#' + targetId).val();
             clearInterval(_rlst_file_observer_timer);
-            _rlst_file_observer_timer = setInterval(function () {
+            _rlst_file_observer_timer = setInterval(function() {
                 var newVal = $('#' + targetId).val();
-                if(newVal && newVal !== lastVal) {
+                if (newVal && newVal !== lastVal) {
                     clearInterval(_rlst_file_observer_timer);
                     $('#' + targetId + '_display').text(newVal.split('/').pop()).css('color', '#333').css('font-style', 'normal');
                     $('#' + targetId).val(newVal.split('/').pop());
                     _rlst_active_url_id = null;
                 }
             }, 200);
+        };
+
+        // ── Item display ──────────────────────────────────────────────────────
+        function updateItemDisplay($item, titleId) {
+            var titleVal = $('#' + titleId).val();
+            var itemNumber = $item.index() + 1;
+            var displayText = '<?php echo t("Αρχείο"); ?> ' + itemNumber;
+            if (titleVal && titleVal.trim() !== '') {
+                displayText += ': ' + titleVal;
+            }
+            $item.find('.wdg-rlst-item-header span').text(displayText);
         }
 
-        // ── Add Item ───────────────────────────────────────────────────────────────
-        function addItem(itemData) {
-            itemData = itemData || {};
-            var ii = _item_idx++;
-            var uid = 'rlst_' + ii;
-            var urlId = 'wdg_rlst_url_' + uid;
-            var nodePop = 'wdg_rlst_node_popup_' + ii;
-            var filePop = 'wdg_rlst_file_popup_' + ii;
-            var $item = $('<div class="wdg-rlst-item" data-ii="' + ii + '">');
-            $item.append(
-                    '<div class="wdg-rlst-item-header">' +
-                    '<span><?php echo t("Αρχείο"); ?> ' + ($('#wdg_rlst_items_list .wdg-rlst-item').length + 1) + '</span>' +
-                    '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
-                    '</div>'
-            );
-            var $body = $('<div class="wdg-rlst-item-body">');
-            // Title
-            $body.append(
-                    '<div class="ody_builder_parameter"><label><?php echo t("Τίτλος"); ?></label>' +
-                    '<input type="text" id="wdg_rlst_title_' + uid + '" class="listbox" value="' + $('<div>').text(itemData.title || '').html() + '"></div>'
-            );
-            // Description
-            $body.append(
-                    '<div class="ody_builder_parameter"><label><?php echo t("Περιγραφή"); ?></label>' +
-                    '<input type="text" id="wdg_rlst_desc_' + uid + '" class="listbox" value="' + $('<div>').text(itemData.description || '').html() + '"></div>'
-            );
-            // Button label
-            $body.append(
-                    '<div class="ody_builder_parameter"><label><?php echo t("Κείμενο κουμπιού"); ?></label>' +
-                    '<input type="text" id="wdg_rlst_btn_label_' + uid + '" class="listbox" value="' + $('<div>').text(itemData.btn_label || '').html() + '"></div>'
-            );
-            // URL + file picker
-            var fileDisplay = itemData.btn_url ? itemData.btn_url.split('/').pop() : '...';
-            $body.append(
-                    '<div class="ody_builder_parameter"><label><?php echo t("Αρχείο"); ?></label>' +
-                    '<div style="display:flex; align-items:center; gap:8px;">' +
-                    '<span id="' + urlId + '_display" style="font-size:12px; color:#555; font-style:italic; flex:1;">' + $('<div>').text(fileDisplay).html() + '</span>' +
-                    '<button type="button" class="ody_builder_content_action btn btn-success" style="font-size:12px; white-space:nowrap;" onclick="wdgRlstSetLink(\'fileLinks_rlst\', \'' + urlId + '\', ' + ii + '); startFileObserver();">🔗 <?php echo t("Επιλογή αρχείου"); ?></button>' +
-                    '</div>' +
-                    '<input type="hidden" id="' + urlId + '" value="' + $('<div>').text(itemData.btn_url || '').html() + '">' +
-                    '</div>'
-            );
-            $item.append($body);
-            $('#wdg_rlst_items_list').append($item);
-            // Node / File popups
-            $('#wdg_rlst_popups_container').append(
-                    '<a id="' + nodePop + '" class="builder_popup" data-vbtype="iframe" href="section_links.php?venobox=[id]' + urlId + '">iFrame</a>' +
-                    '<a id="' + filePop + '" class="builder_popup" data-vbtype="iframe" href="file_links.php?venobox=[id]' + urlId + '">iFrame</a>'
-            );
-            $item.find('.wdg-item-remove').on('click', function () {
-                $item.fadeOut(200, function () {
-                    $item.remove();
-                    renumberItems();
-                });
+        function renumberItems() {
+            $('#wdg_rlst_items_list .wdg-rlst-item').each(function() {
+                var $it = $(this);
+                var ii  = $it.data('ii');
+                var titleId = 'wdg_rlst_title_rlst_' + ii;
+                updateItemDisplay($it, titleId);
             });
-            if($.fn.sortable) {
-                $('#wdg_rlst_items_list').sortable({
-                    handle:      '.wdg-rlst-item-header',
-                    placeholder: 'block-placeholder',
-                    tolerance:   'pointer',
-                    stop:        function () {
+        }
+
+        // ── Move functions ────────────────────────────────────────────────────
+        function moveItemUp($item, titleId) {
+            var $prev = $item.prev('.wdg-rlst-item');
+            if ($prev.length) {
+                $item.slideUp(1, function() {
+                    $item.insertBefore($prev);
+                    $item.slideDown(1, function() {
                         renumberItems();
-                    }
+                        $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                        $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                        setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                    });
                 });
             }
         }
 
-        function renumberItems() {
-            $('#wdg_rlst_items_list .wdg-rlst-item').each(function (idx) {
-                $(this).find('.wdg-rlst-item-header span').text('<?php echo t("Αρχείο"); ?> ' + (idx + 1));
-            });
+        function moveItemDown($item, titleId) {
+            var $next = $item.next('.wdg-rlst-item');
+            if ($next.length) {
+                $item.slideUp(1, function() {
+                    $item.insertAfter($next);
+                    $item.slideDown(1, function() {
+                        renumberItems();
+                        $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                        $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                        setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                    });
+                });
+            }
         }
 
-        _items.forEach(function (item) {
-            addItem(item);
-        });
-        $('#wdg_rlst_add_item_btn').on('click', function () {
-            addItem({});
-        });
-        // ── Label ─────────────────────────────────────────────────────────────────
+        // ── Add Item ──────────────────────────────────────────────────────────
+        function addItem(itemData) {
+            itemData = itemData || {};
+            var ii      = _item_idx++;
+            var uid     = 'rlst_' + ii;
+            var titleId = 'wdg_rlst_title_'     + uid;
+            var urlId   = 'wdg_rlst_url_'       + uid;
+            var nodePop = 'wdg_rlst_node_popup_' + ii;
+            var filePop = 'wdg_rlst_file_popup_' + ii;
+
+            var $item = $('<div class="wdg-rlst-item" data-ii="' + ii + '">');
+            $item.append(
+                '<div class="wdg-rlst-item-header">' +
+                '<div class="wdg-rlst-move-buttons">' +
+                '<button type="button" class="wdg-rlst-move-btn wdg-rlst-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+                '<button type="button" class="wdg-rlst-move-btn wdg-rlst-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+                '</div>' +
+                '<span><?php echo t("Αρχείο"); ?> ' + ($('#wdg_rlst_items_list .wdg-rlst-item').length + 1) + '</span>' +
+                '<button class="wdg-item-remove ody_builder_content_action btn btn-danger" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
+                '</div>'
+            );
+
+            var $body = $('<div class="wdg-rlst-item-body">');
+
+            // Title
+            $body.append(
+                '<div class="ody_builder_parameter"><label><?php echo t("Τίτλος"); ?></label>' +
+                '<input type="text" id="' + titleId + '" class="listbox" value="' + $('<div>').text(itemData.title || '').html() + '"></div>'
+            );
+
+            // Description
+            $body.append(
+                '<div class="ody_builder_parameter"><label><?php echo t("Περιγραφή"); ?></label>' +
+                '<input type="text" id="wdg_rlst_desc_' + uid + '" class="listbox" value="' + $('<div>').text(itemData.description || '').html() + '"></div>'
+            );
+
+            // Button label
+            $body.append(
+                '<div class="ody_builder_parameter"><label><?php echo t("Κείμενο κουμπιού"); ?></label>' +
+                '<input type="text" id="wdg_rlst_btn_label_' + uid + '" class="listbox" value="' + $('<div>').text(itemData.btn_label || '').html() + '"></div>'
+            );
+
+            // URL + file picker
+            var fileDisplay = itemData.btn_url ? itemData.btn_url.split('/').pop() : '...';
+            $body.append(
+                '<div class="ody_builder_parameter"><label><?php echo t("Αρχείο"); ?></label>' +
+                '<div style="display:flex; align-items:center; gap:8px;">' +
+                '<span id="' + urlId + '_display" style="font-size:12px; color:#555; font-style:italic; flex:1;">' + $('<div>').text(fileDisplay).html() + '</span>' +
+                '<button type="button" class="ody_builder_content_action btn btn-success" style="font-size:12px; white-space:nowrap;" onclick="wdgRlstSetLink(\'fileLinks_rlst\', \'' + urlId + '\', ' + ii + '); startFileObserver();">🔗 <?php echo t("Επιλογή αρχείου"); ?></button>' +
+                '</div>' +
+                '<input type="hidden" id="' + urlId + '" value="' + $('<div>').text(itemData.btn_url || '').html() + '">' +
+                '</div>'
+            );
+
+            $item.append($body);
+            $('#wdg_rlst_items_list').append($item);
+
+            // Node / File popups
+            $('#wdg_rlst_popups_container').append(
+                '<a id="' + nodePop + '" class="builder_popup" data-vbtype="iframe" href="section_links.php?venobox=[id]' + urlId + '">iFrame</a>' +
+                '<a id="' + filePop + '" class="builder_popup" data-vbtype="iframe" href="file_links.php?venobox=[id]' + urlId + '">iFrame</a>'
+            );
+
+            // ── Real-time title update ────────────────────────────────────────
+            $('#' + titleId).on('input', function() {
+                updateItemDisplay($item, titleId);
+            });
+
+            // ── Move buttons ──────────────────────────────────────────────────
+            $item.find('.wdg-rlst-move-up').on('click', function(e) {
+                e.stopPropagation();
+                moveItemUp($item, titleId);
+            });
+            $item.find('.wdg-rlst-move-down').on('click', function(e) {
+                e.stopPropagation();
+                moveItemDown($item, titleId);
+            });
+
+            $item.find('.wdg-item-remove').on('click', function() {
+                $item.fadeOut(200, function() {
+                    $item.remove();
+                    renumberItems();
+                });
+            });
+
+            updateItemDisplay($item, titleId);
+        }
+
+        _items.forEach(function(item) { addItem(item); });
+        $('#wdg_rlst_add_item_btn').on('click', function() { addItem({}); });
+
+        // ── Label ─────────────────────────────────────────────────────────────
         label = 'Widget Resource List';
         $('#ody_builder_admin_label').val(label);
         $('.ody_builder_header h2').html('Widgetizer — Resource List');
-        // ── get_block_data ────────────────────────────────────────────────────────
-        window.get_block_data = function () {
+
+        // ── get_block_data ────────────────────────────────────────────────────
+        window.get_block_data = function() {
             var items = [];
-            $('#wdg_rlst_items_list .wdg-rlst-item').each(function () {
-                var ii = $(this).data('ii');
+            $('#wdg_rlst_items_list .wdg-rlst-item').each(function() {
+                var ii  = $(this).data('ii');
                 var uid = 'rlst_' + ii;
                 items.push({
-                    title:       $('#wdg_rlst_title_' + uid).val(),
-                    description: $('#wdg_rlst_desc_' + uid).val(),
+                    title:       $('#wdg_rlst_title_'     + uid).val(),
+                    description: $('#wdg_rlst_desc_'      + uid).val(),
                     btn_label:   $('#wdg_rlst_btn_label_' + uid).val(),
-                    btn_url:     $('#wdg_rlst_url_' + uid).val()
+                    btn_url:     $('#wdg_rlst_url_'       + uid).val()
                 });
             });
             return {
                 widget_id: 'resource_list',
-                params:    {
+                params: {
                     eyebrow:         $('#wdg_rlst_eyebrow').val(),
                     title:           $('#wdg_rlst_title').val(),
                     description:     $('#wdg_rlst_description').val(),

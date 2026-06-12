@@ -161,7 +161,7 @@ if (!$_full_width && $_max_width) {
             inset-inline: 0;
             inset-block-end: 0;
             padding: var(--space-xl);
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
             color: var(--color-white) !important;
             opacity: 0;
             transition: opacity 0.3s ease;
@@ -174,6 +174,7 @@ if (!$_full_width && $_max_width) {
         .widget-<?php echo $_widget_class; ?> .sliding-panel-title {
             margin: 0;
             color: var(--color-white) !important;
+            text-shadow: 1px 1px 2px black;
         }
         
         .widget-<?php echo $_widget_class; ?> .sliding-panel-subtitle {
@@ -181,6 +182,7 @@ if (!$_full_width && $_max_width) {
             margin-block-start: var(--space-xs);
             opacity: 0.8;
             color: var(--color-white) !important;
+            text-shadow: 1px 1px 2px black;
         }
         
         .widget-<?php echo $_widget_class; ?> .sliding-panel-button {

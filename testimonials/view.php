@@ -9,6 +9,7 @@
         border-radius: 4px;
         margin-bottom: 6px;
         background: #f0f4f4;
+        transition: box-shadow 0.3s ease;
     }
 
     .wdg-tmls-item-header {
@@ -18,13 +19,39 @@
         padding: 5px 8px;
         background: #002e3a;
         border-radius: 4px 4px 0 0;
-        cursor: move;
     }
 
     .wdg-tmls-item-header span {
         color: white;
         font-size: 11px;
         flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .wdg-tmls-move-buttons {
+        display: flex;
+        gap: 4px;
+        margin-right: 4px;
+    }
+
+    .wdg-tmls-move-btn {
+        background: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 11px;
+        padding: 0 2px;
+        line-height: 1;
+    }
+
+    .wdg-tmls-move-btn:hover {
+        color: #fbbf24;
+    }
+
+    .wdg-tmls-move-btn:active {
+        color: #f59e0b;
     }
 
     .wdg-tmls-item-body {
@@ -223,7 +250,11 @@ jQuery(function ($) {
         var $item = $('<div class="wdg-tmls-item" data-ii="' + ii + '">');
         $item.append(
             '<div class="wdg-tmls-item-header">' +
-            '<span><?php echo t("Γνώμη"); ?> ' + ($('#wdg_tmls_items_list .wdg-tmls-item').length + 1) + '</span>' +
+            '<div class="wdg-tmls-move-buttons">' +
+            '<button type="button" class="wdg-tmls-move-btn wdg-tmls-move-up">▲</button>' +
+            '<button type="button" class="wdg-tmls-move-btn wdg-tmls-move-down">▼</button>' +
+            '</div>' +
+            '<span class="wdg-tmls-title-display"></span>' +
             '<button type="button" class="wdg-item-remove" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
             '</div>'
         );
@@ -324,24 +355,65 @@ jQuery(function ($) {
             });
         });
         
-        // ── Sortable ─────────────────────────────────────────────────────────
-        if ($.fn.sortable) {
-            $('#wdg_tmls_items_list').sortable({
-                handle: '.wdg-tmls-item-header',
-                placeholder: 'block-placeholder',
-                tolerance: 'pointer',
-                stop: function () {
-                    renumberItems();
-                }
+        // ── Move buttons ─────────────────────────────────────────────────────
+        $item.find('.wdg-tmls-move-up').on('click', function (e) {
+            e.stopPropagation();
+            moveTmlsUp($item);
+        });
+        $item.find('.wdg-tmls-move-down').on('click', function (e) {
+            e.stopPropagation();
+            moveTmlsDown($item);
+        });
+
+        // ── Name input → update display ──────────────────────────────────────
+        $('#wdg_tmls_name_' + uid).on('input', function () {
+            updateTmlsDisplay($item);
+        });
+
+        updateTmlsDisplay($item);
+    }
+
+    function updateTmlsDisplay($item) {
+        var ii = $item.data('ii');
+        var uid = 'tmls_' + ii;
+        var n = $item.index() + 1;
+        var name = $('#wdg_tmls_name_' + uid).val();
+        var label = '<?php echo t("Γνώμη"); ?> ' + n + (name ? ': ' + name : '');
+        $item.find('.wdg-tmls-title-display').text(label);
+    }
+
+    function moveTmlsUp($item) {
+        var $prev = $item.prev('.wdg-tmls-item');
+        if (!$prev.length) return;
+        $item.slideUp(1, function () {
+            $item.insertBefore($prev);
+            $item.slideDown(1, function () {
+                renumberItems();
+                $('html, body').animate({scrollTop: $item.offset().top - 100}, 300);
+                $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                setTimeout(function () { $item.css('box-shadow', ''); }, 600);
             });
-        }
+        });
+    }
+
+    function moveTmlsDown($item) {
+        var $next = $item.next('.wdg-tmls-item');
+        if (!$next.length) return;
+        $item.slideUp(1, function () {
+            $item.insertAfter($next);
+            $item.slideDown(1, function () {
+                renumberItems();
+                $('html, body').animate({scrollTop: $item.offset().top - 100}, 300);
+                $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                setTimeout(function () { $item.css('box-shadow', ''); }, 600);
+            });
+        });
     }
 
     function renumberItems() {
-        var items = $('#wdg_tmls_items_list .wdg-tmls-item');
-        for (var i = 0; i < items.length; i++) {
-            $(items[i]).find('.wdg-tmls-item-header span').text('<?php echo t("Γνώμη"); ?> ' + (i + 1));
-        }
+        $('#wdg_tmls_items_list .wdg-tmls-item').each(function () {
+            updateTmlsDisplay($(this));
+        });
     }
 
     // ── Restore items ─────────────────────────────────────────────────────────

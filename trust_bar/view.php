@@ -9,6 +9,7 @@
         border-radius: 4px;
         margin-bottom: 8px;
         background: #f9f9f9;
+        transition: box-shadow 0.3s ease;
     }
 
     .wdg-trbr-item-header {
@@ -18,13 +19,39 @@
         padding: 6px 8px;
         background: #002e3a;
         border-radius: 4px 4px 0 0;
-        cursor: move;
     }
 
     .wdg-trbr-item-header span {
         color: white;
         font-size: 12px;
         flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .wdg-trbr-move-buttons {
+        display: flex;
+        gap: 4px;
+        margin-right: 4px;
+    }
+
+    .wdg-trbr-move-btn {
+        background: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 11px;
+        padding: 0 2px;
+        line-height: 1;
+    }
+
+    .wdg-trbr-move-btn:hover {
+        color: #fbbf24;
+    }
+
+    .wdg-trbr-move-btn:active {
+        color: #f59e0b;
     }
 
     .wdg-trbr-item-body {
@@ -185,7 +212,11 @@ jQuery(function ($) {
         var $item = $('<div class="wdg-trbr-item" data-idx="' + idx + '">');
         $item.append(
             '<div class="wdg-trbr-item-header">' +
-            '<span>Item ' + ($('#wdg_trbr_items_list .wdg-trbr-item').length + 1) + '</span>' +
+            '<div class="wdg-trbr-move-buttons">' +
+            '<button type="button" class="wdg-trbr-move-btn wdg-trbr-move-up">▲</button>' +
+            '<button type="button" class="wdg-trbr-move-btn wdg-trbr-move-down">▼</button>' +
+            '</div>' +
+            '<span class="wdg-trbr-title-display"></span>' +
             '<button type="button" class="wdg-item-remove" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
             '</div>'
         );
@@ -243,26 +274,64 @@ jQuery(function ($) {
             });
         });
         
-        // ── Sortable ─────────────────────────────────────────────────────────
-        if ($.fn.sortable) {
-            $('#wdg_trbr_items_list').sortable({
-                handle: '.wdg-trbr-item-header',
-                placeholder: 'block-placeholder',
-                tolerance: 'pointer',
-                stop: function () {
-                    renumberItems();
-                }
-            });
-        }
-        
+        // ── Move buttons ─────────────────────────────────────────────────────
+        $item.find('.wdg-trbr-move-up').on('click', function (e) {
+            e.stopPropagation();
+            moveTrbrUp($item);
+        });
+        $item.find('.wdg-trbr-move-down').on('click', function (e) {
+            e.stopPropagation();
+            moveTrbrDown($item);
+        });
+
+        // ── Title input → update display ──────────────────────────────────────
+        $item.find('.wdg-trbr-title').on('input', function () {
+            updateTrbrDisplay($item);
+        });
+
+        updateTrbrDisplay($item);
         checkAddBtn();
     }
 
+    function updateTrbrDisplay($item) {
+        var n = $item.index() + 1;
+        var title = $item.find('.wdg-trbr-title').val();
+        var label = 'Item ' + n + (title ? ': ' + title : '');
+        $item.find('.wdg-trbr-title-display').text(label);
+    }
+
+    function moveTrbrUp($item) {
+        var $prev = $item.prev('.wdg-trbr-item');
+        if (!$prev.length) return;
+        $item.slideUp(1, function () {
+            $item.insertBefore($prev);
+            $item.slideDown(1, function () {
+                renumberItems();
+                $('html, body').animate({scrollTop: $item.offset().top - 100}, 300);
+                $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                setTimeout(function () { $item.css('box-shadow', ''); }, 600);
+            });
+        });
+    }
+
+    function moveTrbrDown($item) {
+        var $next = $item.next('.wdg-trbr-item');
+        if (!$next.length) return;
+        $item.slideUp(1, function () {
+            $item.insertAfter($next);
+            $item.slideDown(1, function () {
+                renumberItems();
+                $('html, body').animate({scrollTop: $item.offset().top - 100}, 300);
+                $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                setTimeout(function () { $item.css('box-shadow', ''); }, 600);
+            });
+        });
+    }
+
     function renumberItems() {
-        var items = $('#wdg_trbr_items_list .wdg-trbr-item');
-        for (var i = 0; i < items.length; i++) {
-            $(items[i]).find('.wdg-trbr-item-header span').text('Item ' + (i + 1));
-        }
+        $('#wdg_trbr_items_list .wdg-trbr-item').each(function () {
+            updateTrbrDisplay($(this));
+        });
     }
 
     // ── Restore items ─────────────────────────────────────────────────────────

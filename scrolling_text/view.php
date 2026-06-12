@@ -17,6 +17,7 @@
         border-radius: 4px;
         margin-bottom: 6px;
         background: #f0f4f4;
+        transition: box-shadow 0.3s ease;
     }
 
     .wdg-scrt-item-header {
@@ -26,13 +27,15 @@
         padding: 5px 8px;
         background: #002e3a;
         border-radius: 4px 4px 0 0;
-        cursor: move;
     }
 
     .wdg-scrt-item-header span {
         color: white;
         font-size: 11px;
         flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .wdg-scrt-item-body {
@@ -48,6 +51,12 @@
         background-color: #f9fad7 !important;
         color: gray !important;
     }
+
+    /* ── Βελάκια μετακίνησης ── */
+    .wdg-scrt-move-buttons { display: flex; gap: 4px; margin-right: 4px; }
+    .wdg-scrt-move-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; transition: all 0.2s; }
+    .wdg-scrt-move-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .wdg-scrt-move-btn:active { transform: scale(0.9); }
 </style>
 
 <!-- ══ STRIPS ════════════════════════════════════════════════════════════════ -->
@@ -64,7 +73,7 @@ jQuery(function ($) {
     var _p = _saved_params || {};
     var _items = _p['items'] || [];
     var _item_idx = 0;
-    
+
     var palette = [
         ["#000", "#444", "#666", "#999", "#ccc", "#eee", "#f3f3f3", "#fff"],
         ["#f00", "#f90", "#ff0", "#0f0", "#0ff", "#00f", "#90f", "#f0f"],
@@ -80,28 +89,85 @@ jQuery(function ($) {
         return (_p[key] !== undefined && _p[key] !== '') ? _p[key] : (def !== undefined ? def : '');
     }
 
+    // ── Item display ──────────────────────────────────────────────────────────
+    function updateItemDisplay($item, textId) {
+        var textVal = $('#' + textId).val();
+        var itemNumber = $item.index() + 1;
+        var displayText = '<?php echo t("Κυλιόμενο μήνυμα"); ?> ' + itemNumber;
+        if (textVal && textVal.trim() !== '') {
+            displayText += ': ' + textVal;
+        }
+        $item.find('.wdg-scrt-item-header span').text(displayText);
+    }
+
+    function renumberItems() {
+        $('#wdg_scrt_items_list .wdg-scrt-item').each(function() {
+            var $it = $(this);
+            var ii  = $it.data('ii');
+            var textId = 'wdg_scrt_text_scrt_' + ii;
+            updateItemDisplay($it, textId);
+        });
+    }
+
+    // ── Move functions ────────────────────────────────────────────────────────
+    function moveItemUp($item, textId) {
+        var $prev = $item.prev('.wdg-scrt-item');
+        if ($prev.length) {
+            $item.slideUp(1, function() {
+                $item.insertBefore($prev);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
+    function moveItemDown($item, textId) {
+        var $next = $item.next('.wdg-scrt-item');
+        if ($next.length) {
+            $item.slideUp(1, function() {
+                $item.insertAfter($next);
+                $item.slideDown(1, function() {
+                    renumberItems();
+                    $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 100);
+                });
+            });
+        }
+    }
+
     function addItem(data) {
         data = data || {};
-        var ii = _item_idx++;
-        var uid = 'scrt_' + ii;
+        var ii    = _item_idx++;
+        var uid   = 'scrt_' + ii;
+        var textId = 'wdg_scrt_text_' + uid;
+
         var $item = $('<div class="wdg-scrt-item" data-ii="' + ii + '">');
-        
+
         $item.append(
             '<div class="wdg-scrt-item-header">' +
+            '<div class="wdg-scrt-move-buttons">' +
+            '<button type="button" class="wdg-scrt-move-btn wdg-scrt-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+            '<button type="button" class="wdg-scrt-move-btn wdg-scrt-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+            '</div>' +
             '<span><?php echo t("Κυλιόμενο μήνυμα"); ?> ' + ($('#wdg_scrt_items_list .wdg-scrt-item').length + 1) + '</span>' +
             '<button type="button" class="wdg-item-remove" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
             '</div>'
         );
-        
+
         var $body = $('<div class="wdg-scrt-item-body">');
-        
+
         // Text
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Μήνυμα"); ?></label>' +
-            '<input type="text" id="wdg_scrt_text_' + uid + '" class="listbox" value="' + $('<div>').text(data.text || '').html() + '"></div>'
+            '<input type="text" id="' + textId + '" class="listbox" value="' + $('<div>').text(data.text || '').html() + '"></div>'
         );
-        
-        // Separator with custom option
+
+        // Separator
         var _sep_val = data.separator || '★';
         var _sep_presets = ['★', '✦', '✧', '◆', '◇', '●', '○', '▪', '—', '·', '｜'];
         var _sep_is_custom = (_sep_presets.indexOf(_sep_val) === -1);
@@ -110,7 +176,7 @@ jQuery(function ($) {
             _sep_opts += '<option value="' + _sep_presets[s] + '"' + (_sep_val === _sep_presets[s] ? ' selected' : '') + '>' + _sep_presets[s] + '</option>';
         }
         _sep_opts += '<option value="__custom__"' + (_sep_is_custom ? ' selected' : '') + '><?php echo t("Άλλο"); ?></option>';
-        
+
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Διαχωριστής"); ?></label>' +
             '<div style="display:flex; gap:6px; align-items:center;">' +
@@ -118,19 +184,19 @@ jQuery(function ($) {
             '<input type="text" id="wdg_scrt_sep_' + uid + '" class="listbox" value="' + $('<div>').text(_sep_val).html() + '" style="text-align: center; max-width:40px !important;"' + (_sep_is_custom ? '' : ' disabled') + '>' +
             '</div></div>'
         );
-        
+
         // Background color
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Χρώμα Φόντου"); ?></label>' +
             '<input type="text" id="wdg_scrt_bg_' + uid + '" data-preferred-format="hex" class="listbox" value="#000000"></div>'
         );
-        
+
         // Text color
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Χρώμα Κειμένου"); ?></label>' +
             '<input type="text" id="wdg_scrt_color_' + uid + '" data-preferred-format="hex" class="listbox" value="#ffffff"></div>'
         );
-        
+
         // Rotation
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Κλίση"); ?></label>' +
@@ -140,7 +206,7 @@ jQuery(function ($) {
             '<option value="1deg">1°</option><option value="2deg">2°</option><option value="3deg">3°</option>' +
             '</select></div>'
         );
-        
+
         // Font size
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Μέγεθος γραμματοσειράς"); ?></label>' +
@@ -153,7 +219,7 @@ jQuery(function ($) {
             '<option value="var(--font-size-3xl)">3XL</option>' +
             '</select></div>'
         );
-        
+
         // Speed
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Ταχύτητα"); ?></label>' +
@@ -165,36 +231,36 @@ jQuery(function ($) {
             '<option value="30"><?php echo t("Πολύ γρήγορα"); ?></option>' +
             '</select></div>'
         );
-        
+
         // Padding
         $body.append(
             '<div class="ody_builder_parameter"><label><?php echo t("Περιθώριο σε pixels"); ?></label>' +
             '<input type="number" id="wdg_scrt_padding_' + uid + '" class="listbox" min="0" max="100" step="1" value="60" style="max-width:100px !important;"></div>'
         );
-        
+
         $item.append($body);
         $('#wdg_scrt_items_list').append($item);
-        
+
         // ── Restore values ────────────────────────────────────────────────────
-        var bgVal = data.strip_bg ? data.strip_bg.replace('[id]', '#') : '#1e3a8a';
+        var bgVal    = data.strip_bg    ? data.strip_bg.replace('[id]', '#')    : '#1e3a8a';
         var colorVal = data.strip_color ? data.strip_color.replace('[id]', '#') : '#ffffff';
-        
+
         $('#wdg_scrt_bg_' + uid).val(bgVal).spectrum({
             showInput: true, showPalette: true, showAlpha: false,
             palette: palette, preferredFormat: 'hex'
         });
-        
+
         $('#wdg_scrt_color_' + uid).val(colorVal).spectrum({
             showInput: true, showPalette: true, showAlpha: false,
             palette: palette, preferredFormat: 'hex'
         });
-        
-        if (data.strip_rotate) $('#wdg_scrt_rotate_' + uid).val(data.strip_rotate);
-        if (data.strip_font_size) $('#wdg_scrt_fsize_' + uid).val(data.strip_font_size);
-        if (data.scroll_duration) $('#wdg_scrt_dur_' + uid).val(data.scroll_duration);
+
+        if (data.strip_rotate)    $('#wdg_scrt_rotate_' + uid).val(data.strip_rotate);
+        if (data.strip_font_size) $('#wdg_scrt_fsize_'  + uid).val(data.strip_font_size);
+        if (data.scroll_duration) $('#wdg_scrt_dur_'    + uid).val(data.scroll_duration);
         if (data.padding !== undefined) $('#wdg_scrt_padding_' + uid).val(data.padding);
-        
-        // ── Separator select sync ────────────────────────────────────────────
+
+        // ── Separator select sync ─────────────────────────────────────────────
         setTimeout(function() {
             $('#wdg_scrt_sep_select_' + uid).on('change', function() {
                 var val = $(this).val();
@@ -205,75 +271,66 @@ jQuery(function ($) {
                 }
             });
         }, 0);
-        
-        // ── Remove button ────────────────────────────────────────────────────
+
+        // ── Real-time text update ─────────────────────────────────────────────
+        $('#' + textId).on('input', function() {
+            updateItemDisplay($item, textId);
+        });
+
+        // ── Move buttons ──────────────────────────────────────────────────────
+        $item.find('.wdg-scrt-move-up').on('click', function(e) {
+            e.stopPropagation();
+            moveItemUp($item, textId);
+        });
+        $item.find('.wdg-scrt-move-down').on('click', function(e) {
+            e.stopPropagation();
+            moveItemDown($item, textId);
+        });
+
+        // ── Remove button ─────────────────────────────────────────────────────
         $item.find('.wdg-item-remove').on('click', function() {
             $item.fadeOut(200, function() {
                 $item.remove();
                 renumberItems();
             });
         });
-        
-        // ── Sortable ─────────────────────────────────────────────────────────
-        if ($.fn.sortable) {
-            $('#wdg_scrt_items_list').sortable({
-                handle: '.wdg-scrt-item-header',
-                placeholder: 'block-placeholder',
-                tolerance: 'pointer',
-                stop: function() {
-                    renumberItems();
-                }
-            });
-        }
-    }
 
-    function renumberItems() {
-        var items = $('#wdg_scrt_items_list .wdg-scrt-item');
-        for (var i = 0; i < items.length; i++) {
-            $(items[i]).find('.wdg-scrt-item-header span').text('<?php echo t("Κυλιόμενο μήνυμα"); ?> ' + (i + 1));
-        }
+        updateItemDisplay($item, textId);
     }
 
     // ── Restore items ─────────────────────────────────────────────────────────
     for (var i = 0; i < _items.length; i++) {
         addItem(_items[i]);
     }
-    
-    $('#wdg_scrt_add_item_btn').on('click', function() {
-        addItem({});
-    });
-    
+
+    $('#wdg_scrt_add_item_btn').on('click', function() { addItem({}); });
+
     // ── Label ─────────────────────────────────────────────────────────────────
     var label = 'Widget Scrolling Text';
     $('#ody_builder_admin_label').val(label);
     $('.ody_builder_header h2').html('Widgetizer — Scrolling Text');
-    
+
     // ── get_block_data ────────────────────────────────────────────────────────
     window.get_block_data = function() {
         var items = [];
         var itemEls = $('#wdg_scrt_items_list .wdg-scrt-item');
-        
         for (var i = 0; i < itemEls.length; i++) {
-            var ii = $(itemEls[i]).data('ii');
+            var ii  = $(itemEls[i]).data('ii');
             var uid = 'scrt_' + ii;
-            
             items.push({
-                text:            $('#wdg_scrt_text_' + uid).val(),
-                separator:       $('#wdg_scrt_sep_' + uid).val(),
-                strip_bg:        $('#wdg_scrt_bg_' + uid).val().replace('#', '[id]'),
-                strip_color:     $('#wdg_scrt_color_' + uid).val().replace('#', '[id]'),
-                strip_rotate:    $('#wdg_scrt_rotate_' + uid).val(),
-                strip_font_size: $('#wdg_scrt_fsize_' + uid).val(),
-                scroll_duration: $('#wdg_scrt_dur_' + uid).val(),
+                text:            $('#wdg_scrt_text_'    + uid).val(),
+                separator:       $('#wdg_scrt_sep_'     + uid).val(),
+                strip_bg:        $('#wdg_scrt_bg_'      + uid).val().replace('#', '[id]'),
+                strip_color:     $('#wdg_scrt_color_'   + uid).val().replace('#', '[id]'),
+                strip_rotate:    $('#wdg_scrt_rotate_'  + uid).val(),
+                strip_font_size: $('#wdg_scrt_fsize_'   + uid).val(),
+                scroll_duration: $('#wdg_scrt_dur_'     + uid).val(),
                 padding:         $('#wdg_scrt_padding_' + uid).val()
             });
         }
-        
         return {
             widget_id: 'scrolling_text',
-            params: {
-                items: items
-            }
+            params: { items: items }
         };
     };
 });

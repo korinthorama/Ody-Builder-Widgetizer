@@ -47,7 +47,7 @@ if (!$_full_width && $_max_width) {
 
 <section
     id="<?php echo $_widget_id; ?>"
-    class="widget widget-resource-list widget-<?php echo $_widget_id; ?> <?php echo $_color . $_align_class . $_position_class; ?>"
+    class="widget widget-resource-list widget-<?php echo $_widget_id; ?> <?php echo $_color . $_align_class . $_position_class; ?> no_collapse"
     data-widget-id="<?php echo $_widget_id; ?>"
     data-widget-type="resource-list"
     style="<?php echo $_section_style; ?>"

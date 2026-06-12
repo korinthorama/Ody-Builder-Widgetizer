@@ -546,11 +546,6 @@ jQuery(function ($) {
             palette:         palette,
             preferredFormat: 'hex'
         });
-        
-        // Όταν αλλάζει χρώμα με το χέρι, "ξεκαθαρίζουμε" το preset
-        $(this).on('change', function() {
-            $('#wdg_preset_global').val('').trigger('change');
-        });
     });
     
     // ── GLOBAL Preset colors loading function (ενημερώνει Standard + Highlight) ──
@@ -617,9 +612,6 @@ jQuery(function ($) {
         updateSwatchesFromTheme(theme);
     }
     
-    // ── Ανάκτηση αποθηκευμένου preset ──────────────────────────────────────────
-    var savedPreset = pval('wdg_selected_preset', '');
-    
     // ── Initialize Select2 for GLOBAL preset select ──────────────────────────────
     if($.fn.select2) {
         $('#wdg_preset_global').select2({
@@ -636,11 +628,6 @@ jQuery(function ($) {
                 return state.text;
             }
         });
-        
-        // Αν υπάρχει αποθηκευμένο preset, το φορτώνουμε
-        if(savedPreset && savedPreset !== '') {
-            $('#wdg_preset_global').val(savedPreset).trigger('change');
-        }
         
         // Handle global preset change
         $('#wdg_preset_global').on('change', function() {
@@ -718,13 +705,6 @@ jQuery(function ($) {
                 params[varKey] = fontVal;
             }
         });
-        // Αποθήκευση του επιλεγμένου preset
-        var selectedPreset = $('#wdg_preset_global').val();
-        if(selectedPreset && selectedPreset !== '') {
-            params['wdg_selected_preset'] = selectedPreset;
-        } else {
-            params['wdg_selected_preset'] = '';
-        }
         return {
             widget_id: 'settings',
             params:    params

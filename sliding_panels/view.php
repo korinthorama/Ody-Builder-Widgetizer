@@ -28,6 +28,7 @@ $_slpn_page_opts .= '<option value="fileLinks_slpn">' . t("Link για αρχε�
         border-radius: 4px;
         margin-bottom: 6px;
         background: #f0f4f4;
+        transition: box-shadow 0.3s ease;
     }
 
     .wdg-slpn-item-header {
@@ -37,13 +38,39 @@ $_slpn_page_opts .= '<option value="fileLinks_slpn">' . t("Link για αρχε�
         padding: 5px 8px;
         background: #002e3a;
         border-radius: 4px 4px 0 0;
-        cursor: move;
     }
 
     .wdg-slpn-item-header span {
         color: white;
         font-size: 11px;
         flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .wdg-slpn-move-buttons {
+        display: flex;
+        gap: 4px;
+        margin-right: 4px;
+    }
+
+    .wdg-slpn-move-btn {
+        background: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 11px;
+        padding: 0 2px;
+        line-height: 1;
+    }
+
+    .wdg-slpn-move-btn:hover {
+        color: #fbbf24;
+    }
+
+    .wdg-slpn-move-btn:active {
+        color: #f59e0b;
     }
 
     .wdg-slpn-item-body {
@@ -216,7 +243,11 @@ jQuery(function ($) {
         var $item = $('<div class="wdg-slpn-item" data-ii="' + ii + '">');
         $item.append(
             '<div class="wdg-slpn-item-header">' +
-            '<span><?php echo t("Εικόνα"); ?> ' + ($('#wdg_slpn_items_list .wdg-slpn-item').length + 1) + '</span>' +
+            '<div class="wdg-slpn-move-buttons">' +
+            '<button type="button" class="wdg-slpn-move-btn wdg-slpn-move-up">▲</button>' +
+            '<button type="button" class="wdg-slpn-move-btn wdg-slpn-move-down">▼</button>' +
+            '</div>' +
+            '<span class="wdg-slpn-title-display"></span>' +
             '<button type="button" class="wdg-item-remove" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
             '</div>'
         );
@@ -343,24 +374,65 @@ jQuery(function ($) {
             });
         });
         
-        // ── Sortable ───────────────────────────────────────────────────────────
-        if ($.fn.sortable) {
-            $('#wdg_slpn_items_list').sortable({
-                handle: '.wdg-slpn-item-header',
-                placeholder: 'block-placeholder',
-                tolerance: 'pointer',
-                stop: function () {
-                    renumberItems();
-                }
+        // ── Move buttons ───────────────────────────────────────────────────────
+        $item.find('.wdg-slpn-move-up').on('click', function (e) {
+            e.stopPropagation();
+            moveSlpnUp($item);
+        });
+        $item.find('.wdg-slpn-move-down').on('click', function (e) {
+            e.stopPropagation();
+            moveSlpnDown($item);
+        });
+
+        // ── Title input → update display ───────────────────────────────────────
+        $('#wdg_slpn_ptitle_' + uid).on('input', function () {
+            updateSlpnDisplay($item);
+        });
+
+        updateSlpnDisplay($item);
+    }
+
+    function updateSlpnDisplay($item) {
+        var ii = $item.data('ii');
+        var uid = 'slpn_' + ii;
+        var n = $item.index() + 1;
+        var title = $('#wdg_slpn_ptitle_' + uid).val();
+        var label = '<?php echo t("Εικόνα"); ?> ' + n + (title ? ': ' + title : '');
+        $item.find('.wdg-slpn-title-display').text(label);
+    }
+
+    function moveSlpnUp($item) {
+        var $prev = $item.prev('.wdg-slpn-item');
+        if (!$prev.length) return;
+        $item.slideUp(1, function () {
+            $item.insertBefore($prev);
+            $item.slideDown(1, function () {
+                renumberItems();
+                $('html, body').animate({scrollTop: $item.offset().top - 100}, 300);
+                $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                setTimeout(function () { $item.css('box-shadow', ''); }, 600);
             });
-        }
+        });
+    }
+
+    function moveSlpnDown($item) {
+        var $next = $item.next('.wdg-slpn-item');
+        if (!$next.length) return;
+        $item.slideUp(1, function () {
+            $item.insertAfter($next);
+            $item.slideDown(1, function () {
+                renumberItems();
+                $('html, body').animate({scrollTop: $item.offset().top - 100}, 300);
+                $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                setTimeout(function () { $item.css('box-shadow', ''); }, 600);
+            });
+        });
     }
 
     function renumberItems() {
-        var items = $('#wdg_slpn_items_list .wdg-slpn-item');
-        for (var i = 0; i < items.length; i++) {
-            $(items[i]).find('.wdg-slpn-item-header span').text('<?php echo t("Εικόνα"); ?> ' + (i + 1));
-        }
+        $('#wdg_slpn_items_list .wdg-slpn-item').each(function () {
+            updateSlpnDisplay($(this));
+        });
     }
 
     // ── Restore panels ─────────────────────────────────────────────────────────
