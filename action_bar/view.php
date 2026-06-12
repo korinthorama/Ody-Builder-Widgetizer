@@ -21,6 +21,31 @@
         width: 100% !important;
         margin: 2px 0 5px;
     }
+    
+    /* Image picker styles */
+    .wdg-image-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .wdg-img-filename {
+        font-size: 12px;
+        color: #999;
+        font-style: italic;
+        min-width: 0;
+        word-break: break-all;
+    }
+    
+    .wdg-img-preview {
+        max-height: 80px;
+        max-width: 100%;
+        margin-top: 6px;
+        border-radius: 4px;
+        display: none;
+        border: 1px solid #ddd;
+    }
 </style>
 
 <!-- ══ ΚΕΙΜΕΝΟ ═══════════════════════════════════════════════════════════════ -->
@@ -61,6 +86,40 @@
     </select>
 </div>
 
+
+<!-- ══ ΕΙΚΟΝΑ & OVERLAY ═══════════════════════════════════════════════════════ -->
+<div class="wdg-section-title"><?php echo t("Εικόνα & Μάσκα"); ?></div>
+
+<div class="ody_builder_parameter">
+    <label><?php echo t("Εικόνα Φόντου"); ?></label>
+    <div class="wdg-image-row">
+        <span id="wdg_ab_bg_image_display" class="wdg-img-filename"><?php echo t('Επιλέξτε εικόνα'); ?>...</span>
+        <a href="ody_builder_mediabank.php?blockType=widgetizer&langID=<?php echo $langID; ?>"
+           class="ody_builder_content_action ody_builder_select_media btn btn-inverse"
+           data-vbtype="iframe" data-wdg-target="wdg_ab_bg_image">
+            <?php echo t("Επιλογή"); ?>
+        </a>
+        <a href="javascript:void(0)" id="wdg_ab_bg_image_remove" class="ody_builder_content_action btn btn-danger" style="visibility:hidden;"
+           onclick="$('#wdg_ab_bg_image').val(''); $('#wdg_ab_bg_image_display').text('<?php echo t("Επιλέξτε εικόνα..."); ?>'); $('#wdg_ab_bg_image_preview').hide().attr('src',''); $('#wdg_ab_bg_image_remove').css('visibility','hidden');">
+            <?php echo t("Αφαίρεση"); ?>
+        </a>
+    </div>
+    <input type="hidden" id="wdg_ab_bg_image" value="">
+    <img id="wdg_ab_bg_image_preview" class="wdg-img-preview" src="" alt="">
+</div>
+
+<div class="ody_builder_parameter">
+    <label for="wdg_ab_overlay_color"><?php echo t("Χρώμα μάσκας"); ?></label>
+    <input type="text" id="wdg_ab_overlay_color" data-preferred-format="hex" value="#000000">
+</div>
+
+<div class="ody_builder_parameter">
+    <label for="wdg_ab_overlay_opacity"><?php echo t("Διαφάνεια μάσκας"); ?> <small style="color:#999;font-weight:normal;">(0–1)</small></label>
+    <input type="number" id="wdg_ab_overlay_opacity" class="listbox" value="0.4"
+           min="0" max="1" step="0.1" style="max-width:100px;">
+</div>
+
+
 <!-- ══ BUTTON 1 ═══════════════════════════════════════════════════════════════ -->
 <div class="wdg-section-title"><?php echo t("Πρώτο κουμπί"); ?></div>
 
@@ -97,7 +156,6 @@
         <p><?php echo t("Άνοιγμα σε νέο tab"); ?></p>
     </div>
 </div>
-
 
 <div class="ody_builder_parameter">
     <label for="wdg_ab_btn1_style"><?php echo t("Εμφάνιση κουμπιού"); ?></label>
@@ -150,7 +208,6 @@
 </div>
 
 
-
 <!-- Hidden link pickers — btn1 -->
 <a id="wdg_ab_node_popup_btn1" class="builder_popup" data-vbtype="iframe"
    href="section_links.php?venobox=[id]wdg_ab_btn1_url">iFrame</a>
@@ -171,6 +228,18 @@ jQuery(function ($) {
         return (_p[key] !== undefined && _p[key] !== '') ? _p[key] : (def || '');
     }
 
+    // Palette for spectrum
+    var palette = [
+        ["#000", "#444", "#666", "#999", "#ccc", "#eee", "#f3f3f3", "#fff"],
+        ["#f00", "#f90", "#ff0", "#0f0", "#0ff", "#00f", "#90f", "#f0f"],
+        ["#f4cccc", "#fce5cd", "#fff2cc", "#d9ead3", "#d0e0e3", "#cfe2f3", "#d9d2e9", "#ead1dc"],
+        ["#ea9999", "#f9cb9c", "#ffe599", "#b6d7a8", "#a2c4c9", "#9fc5e8", "#b4a7d6", "#d5a6bd"],
+        ["#e06666", "#f6b26b", "#ffd966", "#93c47d", "#76a5af", "#6fa8dc", "#8e7cc3", "#c27ba0"],
+        ["#c00", "#e69138", "#f1c232", "#6aa84f", "#45818e", "#3d85c6", "#674ea7", "#a64d79"],
+        ["#900", "#b45f06", "#bf9000", "#38761d", "#134f5c", "#0b5394", "#351c75", "#741b47"],
+        ["#600", "#783f04", "#7f6000", "#274e13", "#0c343d", "#073763", "#20124d", "#4c1130"]
+    ];
+
     // ── Φόρτωση τιμών ────────────────────────────────────────────────────────
     $('#wdg_ab_headline').val(pval('headline'));
     $('#wdg_ab_body').val(pval('body'));
@@ -184,12 +253,50 @@ jQuery(function ($) {
     $('#wdg_ab_btn2_new_tab').prop('checked', _p['btn2_new_tab'] == '1');
     $('#wdg_ab_color_scheme').val(pval('color_scheme', 'color-scheme-highlight-primary'));
     $('#wdg_ab_container_width').val(pval('container_width', 'xl'));
+    
+    // Overlay color & opacity
+    var savedOverlayColor = pval('overlay_color', '#000000').replace('[id]', '#');
+    $('#wdg_ab_overlay_color').val(savedOverlayColor).spectrum({
+        showInput:       true,
+        showPalette:     true,
+        showAlpha:       false,
+        palette:         palette,
+        preferredFormat: 'hex'
+    });
+    $('#wdg_ab_overlay_opacity').val(pval('overlay_opacity', '0.4'));
+
+    // ── Φόρτωση εικόνας ──────────────────────────────────────────────────────
+    function loadImage(id, path) {
+        if(!path) return;
+        $('#' + id).val(path);
+        $('#' + id + '_display').text(path.split('/').pop());
+        $('#' + id + '_preview').attr('src', path).show();
+        $('#' + id + '_remove').css('visibility', 'visible');
+    }
+    
+    loadImage('wdg_ab_bg_image', pval('bg_image'));
 
     // ── VenoBox popups ────────────────────────────────────────────────────────
+    window.venobox = new VenoBox({selector: '.ody_builder_select_media', fitView: true, ratio: 'full'});
     new VenoBox({selector: '#wdg_ab_node_popup_btn1', fitView: true, ratio: 'full'});
     new VenoBox({selector: '#wdg_ab_file_popup_btn1', fitView: true, ratio: 'full'});
     new VenoBox({selector: '#wdg_ab_node_popup_btn2', fitView: true, ratio: 'full'});
     new VenoBox({selector: '#wdg_ab_file_popup_btn2', fitView: true, ratio: 'full'});
+    
+    // Mediabank callback
+    $('.ody_builder_select_media').on('click', function () {
+        window._wdg_mediabank_caller = this;
+    });
+    
+    window.odyRecieveMediabank = function (file, id, ext, image_path, callerEl) {
+        var targetId = $(callerEl).data('wdg-target');
+        if(!targetId) return;
+        var fullPath = image_path + id + '.' + ext;
+        $('#' + targetId).val(fullPath);
+        $('#' + targetId + '_display').text(file);
+        $('#' + targetId + '_preview').attr('src', fullPath).show();
+        $('#' + targetId + '_remove').css('visibility', 'visible');
+    };
 
     // ── Link picker helper ────────────────────────────────────────────────────
     window.wdgAbSetLink = function (val, targetId) {
@@ -224,18 +331,21 @@ jQuery(function ($) {
         return {
             widget_id: 'action_bar',
             params: {
-                headline:     $('#wdg_ab_headline').val(),
-                body:         $('#wdg_ab_body').val(),
-                btn1_label:   $('#wdg_ab_btn1_label').val(),
-                btn1_url:     $('#wdg_ab_btn1_url').val(),
-                btn1_style:   $('#wdg_ab_btn1_style').val(),
-                btn1_new_tab: $('#wdg_ab_btn1_new_tab').is(':checked') ? '1' : '0',
-                btn2_label:   $('#wdg_ab_btn2_label').val(),
-                btn2_url:     $('#wdg_ab_btn2_url').val(),
-                btn2_style:   $('#wdg_ab_btn2_style').val(),
-                btn2_new_tab: $('#wdg_ab_btn2_new_tab').is(':checked') ? '1' : '0',
-                color_scheme:     $('#wdg_ab_color_scheme').val(),
-                container_width:  $('#wdg_ab_container_width').val()
+                headline:          $('#wdg_ab_headline').val(),
+                body:              $('#wdg_ab_body').val(),
+                btn1_label:        $('#wdg_ab_btn1_label').val(),
+                btn1_url:          $('#wdg_ab_btn1_url').val(),
+                btn1_style:        $('#wdg_ab_btn1_style').val(),
+                btn1_new_tab:      $('#wdg_ab_btn1_new_tab').is(':checked') ? '1' : '0',
+                btn2_label:        $('#wdg_ab_btn2_label').val(),
+                btn2_url:          $('#wdg_ab_btn2_url').val(),
+                btn2_style:        $('#wdg_ab_btn2_style').val(),
+                btn2_new_tab:      $('#wdg_ab_btn2_new_tab').is(':checked') ? '1' : '0',
+                color_scheme:      $('#wdg_ab_color_scheme').val(),
+                container_width:   $('#wdg_ab_container_width').val(),
+                bg_image:          $('#wdg_ab_bg_image').val(),
+                overlay_color:     $('#wdg_ab_overlay_color').val().replace('#', '[id]'),
+                overlay_opacity:   $('#wdg_ab_overlay_opacity').val()
             }
         };
     };

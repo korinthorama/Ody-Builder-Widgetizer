@@ -23,6 +23,7 @@
         border-radius: 4px;
         margin-bottom: 8px;
         background: #f9f9f9;
+        transition: box-shadow 0.3s ease;
     }
 
     .wdg-acc-item-header {
@@ -32,7 +33,6 @@
         padding: 6px 8px;
         background: #002e3a;
         border-radius: 4px 4px 0 0;
-        cursor: move;
     }
 
     .wdg-acc-item-header span {
@@ -81,6 +81,27 @@
         max-width: 400px !important;
         width: 100% !important;
         margin: 2px 0 5px;
+    }
+    
+    /* Βελάκια μετακίνησης */
+    .wdg-acc-move-buttons {
+        display: flex;
+        gap: 4px;
+        margin-right: 4px;
+    }
+    
+    .wdg-acc-move-btn {
+        background: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 2px 4px;
+        border-radius: 3px;
+    }
+    
+    .wdg-acc-move-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
     }
 </style>
 <!-- ══ ΓΕΝΙΚΑ ════════════════════════════════════════════════════════════════ -->
@@ -132,6 +153,38 @@
         $('#wdg_acc_description').val(pval('description'));
         $('#wdg_acc_multi_open').prop('checked', _p['multi_open'] == '1');
         $('#wdg_acc_color_scheme').val(pval('color_scheme', 'color-scheme-standard-primary'));
+        
+        // ── Move functions ──────────────────────────────────────────────────────
+        function moveItemUp($item) {
+            var $prev = $item.prev('.wdg-acc-item');
+            if ($prev.length) {
+                $item.slideUp(200, function() {
+                    $item.insertBefore($prev);
+                    $item.slideDown(200, function() {
+                        renumberItems();
+                        $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                        $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                        setTimeout(function() { $item.css('box-shadow', ''); }, 1000);
+                    });
+                });
+            }
+        }
+
+        function moveItemDown($item) {
+            var $next = $item.next('.wdg-acc-item');
+            if ($next.length) {
+                $item.slideUp(200, function() {
+                    $item.insertAfter($next);
+                    $item.slideDown(200, function() {
+                        renumberItems();
+                        $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                        $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                        setTimeout(function() { $item.css('box-shadow', ''); }, 1000);
+                    });
+                });
+            }
+        }
+
         // ── Repeater ──────────────────────────────────────────────────────────────
         var _item_idx = 0;
 
@@ -139,26 +192,41 @@
             var idx = _item_idx++;
             var $item = $('<div class="wdg-acc-item" data-idx="' + idx + '">');
             $item.append(
-                    '<div class="wdg-acc-item-header">' +
-                    '<span><?php echo t("Ερώτηση"); ?> ' + ($('#wdg_accordion_items .wdg-acc-item').length + 1) + '</span>' +
-                    '<button class="wdg-item-remove" type="button" title="<?php echo t("Αφαίρεση"); ?>">✕</button>' +
-                    '</div>'
+                '<div class="wdg-acc-item-header">' +
+                '<div class="wdg-acc-move-buttons">' +
+                '<button type="button" class="wdg-acc-move-btn wdg-acc-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+                '<button type="button" class="wdg-acc-move-btn wdg-acc-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+                '</div>' +
+                '<span><?php echo t("Ερώτηση"); ?> ' + ($('#wdg_accordion_items .wdg-acc-item').length + 1) + '</span>' +
+                '<button class="wdg-item-remove" type="button" title="<?php echo t("Αφαίρεση"); ?>">✕</button>' +
+                '</div>'
             );
             var $body = $('<div class="wdg-acc-item-body">');
             $body.append(
-                    '<div class="ody_builder_parameter">' +
-                    '<label><?php echo t("Ερώτηση"); ?></label>' +
-                    '<input type="text" class="listbox wdg-acc-question" value="' + $('<div>').text(question || '').html() + '">' +
-                    '</div>'
+                '<div class="ody_builder_parameter">' +
+                '<label><?php echo t("Ερώτηση"); ?></label>' +
+                '<input type="text" class="listbox wdg-acc-question" value="' + $('<div>').text(question || '').html() + '">' +
+                '</div>'
             );
             $body.append(
-                    '<div class="ody_builder_parameter">' +
-                    '<label><?php echo t("Απάντηση"); ?></label>' +
-                    '<textarea class="listbox wdg-acc-answer">' + $('<div>').text(answer || '').html() + '</textarea>' +
-                    '</div>'
+                '<div class="ody_builder_parameter">' +
+                '<label><?php echo t("Απάντηση"); ?></label>' +
+                '<textarea class="listbox wdg-acc-answer">' + $('<div>').text(answer || '').html() + '</textarea>' +
+                '</div>'
             );
             $item.append($body);
             $('#wdg_accordion_items').append($item);
+            
+            // Move buttons events
+            $item.find('.wdg-acc-move-up').on('click', function(e) {
+                e.stopPropagation();
+                moveItemUp($item);
+            });
+            $item.find('.wdg-acc-move-down').on('click', function(e) {
+                e.stopPropagation();
+                moveItemDown($item);
+            });
+            
             // Remove button
             $item.find('.wdg-item-remove').on('click', function () {
                 $item.fadeOut(200, function () {
@@ -178,23 +246,17 @@
         $.each(_items, function (i, item) {
             addItem(item.question, item.answer);
         });
+        
         // Προσθήκη νέου item
         $('#wdg_acc_add_btn').on('click', function () {
             addItem('', '');
         });
-        // Sortable
-        if($.fn.sortable) {
-            $('#wdg_accordion_items').sortable({
-                handle:      '.wdg-acc-item-header',
-                placeholder: 'block-placeholder',
-                tolerance:   'pointer',
-                stop:        function() { renumberItems(); }
-            });
-        }
+        
         // ── Label ────────────────────────────────────────────────────────────────
         label = 'Widget Accordion';
         $('#ody_builder_admin_label').val(label);
         $('.ody_builder_header h2').html('Widgetizer — Accordion');
+        
         // ── get_block_data ────────────────────────────────────────────────────────
         window.get_block_data = function () {
             var items = [];

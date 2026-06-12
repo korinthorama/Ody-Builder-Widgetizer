@@ -1,6 +1,7 @@
 <?php
 /*
  * Widgetizer — Checkerboard Widget — view.php
+ * Refactored: Arrows instead of drag & drop, title display
  */
 ?>
 <style>
@@ -19,6 +20,8 @@
         border-radius: 4px;
         margin-bottom: 12px;
         background: #f9f9f9;
+        overflow: hidden;
+        transition: box-shadow 0.3s ease;
     }
 
     .wdg-cb-item-header {
@@ -28,13 +31,40 @@
         padding: 6px 8px;
         background: #002e3a;
         border-radius: 4px 4px 0 0;
-        cursor: move;
     }
 
-    .wdg-cb-item-header span {
+    .wdg-cb-item-header .wdg-cb-title-display {
         color: white;
-        font-size: 12px;
+        font-size: 11px;
         flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .wdg-cb-move-buttons {
+        display: flex;
+        gap: 4px;
+        margin-right: 4px;
+    }
+
+    .wdg-cb-move-btn {
+        background: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 2px 4px;
+        border-radius: 3px;
+        transition: all 0.2s;
+    }
+
+    .wdg-cb-move-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .wdg-cb-move-btn:active {
+        transform: scale(0.9);
     }
 
     .wdg-cb-item-body {
@@ -113,9 +143,16 @@
         width: 100% !important;
         margin: 2px 0 5px;
     }
+
+    .block-placeholder {
+        background: #e0f0f0;
+        border: 2px dashed #002e3a;
+        height: 60px;
+        margin-bottom: 12px;
+        border-radius: 4px;
+    }
 </style>
 
-<!-- ΓΕΝΙΚΑ -->
 <div class="wdg-section-title"><?php echo t("Γενικά"); ?></div>
 
 <div class="ody_builder_parameter">
@@ -163,17 +200,32 @@
     </select>
 </div>
 
-<!-- ITEMS -->
 <div class="wdg-section-title">Checkerboard Items</div>
 
 <div id="wdg_checkerboard_items"></div>
 <button id="wdg_cb_add_btn" type="button">+ <?php echo t("Προσθήκη"); ?> Item</button>
 
-
-
+<div id="wdg_cb_popups_container" style="display:none;"></div>
 
 <script>
 jQuery(function ($) {
+    // Απομόνωση μεταφράσεων σε καθαρές JS μεταβλητές για αποφυγή SyntaxError
+    var transMoveUp     = <?php echo json_encode(t("Μετακίνηση πάνω")); ?>;
+    var transMoveDown   = <?php echo json_encode(t("Μετακίνηση κάτω")); ?>;
+    var transRemove     = <?php echo json_encode(t("Αφαίρεση")); ?>;
+    var transSelectImg  = <?php echo json_encode(t("Επιλέξτε...")); ?>;
+    var transSelectBtn  = <?php echo json_encode(t("Επιλογή")); ?>;
+    var transOrSelect   = <?php echo json_encode(t("ή επιλέξτε υπάρχουσα σελίδα")); ?>;
+    var transHome       = <?php echo json_encode(t("ΑΡΧΙΚΗ ΣΕΛΙΔΑ")); ?>;
+    var transSectionLink= <?php echo json_encode(t("Link για εγγραφή ενότητας")); ?>;
+    var transFileLink   = <?php echo json_encode(t("Link για αρχείο")); ?>;
+    var transTypeLabel  = <?php echo json_encode(t("Τύπος")); ?>;
+    var transTitleLabel = <?php echo json_encode(t("Τίτλος")); ?>;
+    var transDescLabel  = <?php echo json_encode(t("Περιγραφή")); ?>;
+    var transBtnLabel   = <?php echo json_encode(t("Κείμενο κουμπιού")); ?>;
+    var transNewTab     = <?php echo json_encode(t("Άνοιγμα σε νέο tab")); ?>;
+    var transImgLabel   = <?php echo json_encode(t("Εικόνα")); ?>;
+
     var _p = _saved_params || {};
     var _items = _p['items'] || [];
 
@@ -193,6 +245,14 @@ jQuery(function ($) {
 
     function pval(key, def) {
         return (_p[key] !== undefined && _p[key] !== '') ? _p[key] : (def !== undefined ? def : '');
+    }
+
+    // Helper function for escaping textarea content
+    function escapeForTextarea(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;');
     }
 
     // Φόρτωση γενικών τιμών
@@ -238,24 +298,97 @@ jQuery(function ($) {
         $('#' + targetId).val(link);
     };
 
+    // ── Update title display ─────────────────────────────────────────────────
+    function updateTitleDisplay($item, uid) {
+        var titleValue = $('#wdg_cb_title_' + uid).val();
+        var itemNumber = $('#wdg_checkerboard_items .wdg-cb-item').index($item) + 1;
+        var displayText = 'Item ' + itemNumber;
+        
+        if (titleValue && titleValue.trim() !== '') {
+            displayText += ': ' + titleValue;
+        }
+        
+        $item.find('.wdg-cb-title-display').text(displayText);
+    }
+
+    // ── Move functions with smooth slide animation, scroll and highlight ──────
+    function moveItemUp($item) {
+        var $prev = $item.prev('.wdg-cb-item');
+        var speed = 120;
+        if ($prev.length) {
+            $item.slideUp(speed, function() {
+                $item.insertBefore($prev);
+                $item.slideDown(speed, function() {
+                    renumberItems();
+                    // Scroll to moved item
+                    $('html, body').animate({
+                        scrollTop: $item.offset().top - 100
+                    }, 300);
+                    // Highlight effect
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() {
+                        $item.css('box-shadow', '');
+                    }, 300);
+                });
+            });
+        }
+    }
+
+    function moveItemDown($item) {
+        var $next = $item.next('.wdg-cb-item');
+        var speed = 120;
+        if ($next.length) {
+            $item.slideUp(speed, function() {
+                $item.insertAfter($next);
+                $item.slideDown(speed, function() {
+                    renumberItems();
+                    // Scroll to moved item
+                    $('html, body').animate({
+                        scrollTop: $item.offset().top - 100
+                    }, 300);
+                    // Highlight effect
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() {
+                        $item.css('box-shadow', '');
+                    }, 300);
+                });
+            });
+        }
+    }
+
+    function renumberItems() {
+        $('#wdg_checkerboard_items .wdg-cb-item').each(function() {
+            var $item = $(this);
+            var idx = $item.data('idx');
+            var uid = 'cb_' + idx;
+            updateTitleDisplay($item, uid);
+        });
+    }
+
     var _item_idx = 0;
 
     function addItem(data) {
         var idx = _item_idx++;
+        var uid = 'cb_' + idx;
         var type = data.type || 'content';
-        var typeLabel = (type === 'content') ? '📝 Κείμενο' : '🖼️ Εικόνα';
         
-        var imgId = 'wdg_chkb_img_' + idx;
-        var mediaId = 'wdg_chkb_media_btn_' + idx;
-        var urlId = 'wdg_chkb_url_' + idx;
+        var imgId = 'wdg_cb_img_' + uid;
+        var mediaId = 'wdg_cb_media_btn_' + uid;
+        var urlId = 'wdg_cb_url_' + uid;
+        var nodePop = 'wdg_cb_node_popup_' + idx;
+        var filePop = 'wdg_cb_file_popup_' + idx;
 
         var $item = $('<div class="wdg-cb-item" data-idx="' + idx + '">');
 
-        // Header
+        // Header with move buttons and title display using JS variables
         $item.append(
             '<div class="wdg-cb-item-header">' +
-            '<span>' + typeLabel + '</span>' +
-            '<button class="wdg-item-remove" type="button" title="<?php echo t("Αφαίρεση"); ?>">✕</button>' +
+            '<div class="wdg-cb-move-buttons">' +
+            '<button type="button" class="wdg-cb-move-btn wdg-cb-move-up" title="' + transMoveUp + '">▲</button>' +
+            '<button type="button" class="wdg-cb-move-btn wdg-cb-move-down" title="' + transMoveDown + '">▼</button>' +
+            '</div>' +
+            '<span class="wdg-cb-title-display">Item ' + ($('#wdg_checkerboard_items .wdg-cb-item').length + 1) + '</span>' +
+            '<button class="wdg-item-remove" type="button" title="' + transRemove + '">✕</button>' +
             '</div>'
         );
 
@@ -264,7 +397,7 @@ jQuery(function ($) {
         // Type selector
         $body.append(
             '<div class="ody_builder_parameter wdg-type-select">' +
-            '<label><?php echo t("Τύπος"); ?></label>' +
+            '<label>' + transTypeLabel + '</label>' +
             '<select class="listbox wdg-cb-type">' +
             '<option value="content" ' + (type === 'content' ? 'selected' : '') + '>📝 Κείμενο (Title, Description, Button)</option>' +
             '<option value="image" ' + (type === 'image' ? 'selected' : '') + '>🖼️ Εικόνα μόνο</option>' +
@@ -278,24 +411,24 @@ jQuery(function ($) {
         // Title
         $contentFields.append(
             '<div class="ody_builder_parameter">' +
-            '<label><?php echo t("Τίτλος"); ?></label>' +
-            '<input type="text" class="listbox wdg-cb-title" value="' + $('<div>').text(data.title || '').html() + '">' +
+            '<label>' + transTitleLabel + '</label>' +
+            '<input type="text" id="wdg_cb_title_' + uid + '" class="listbox wdg-cb-title" value="' + escapeForTextarea(data.title || '') + '">' +
             '</div>'
         );
         
         // Description
         $contentFields.append(
             '<div class="ody_builder_parameter">' +
-            '<label><?php echo t("Περιγραφή"); ?></label>' +
-            '<textarea class="listbox wdg-cb-description" rows="3">' + $('<div>').text(data.description || '').html() + '</textarea>' +
+            '<label>' + transDescLabel + '</label>' +
+            '<textarea id="wdg_cb_description_' + uid + '" class="listbox wdg-cb-description" rows="3">' + escapeForTextarea(data.description || '') + '</textarea>' +
             '</div>'
         );
         
         // Button label
         $contentFields.append(
             '<div class="ody_builder_parameter">' +
-            '<label><?php echo t("Κείμενο κουμπιού"); ?></label>' +
-            '<input type="text" class="listbox wdg-cb-button-label" value="' + $('<div>').text(data.button_label || '').html() + '">' +
+            '<label>' + transBtnLabel + '</label>' +
+            '<input type="text" id="wdg_cb_btnlabel_' + uid + '" class="listbox wdg-cb-button-label" value="' + escapeForTextarea(data.button_label || '') + '">' +
             '</div>'
         );
         
@@ -303,22 +436,23 @@ jQuery(function ($) {
         $contentFields.append(
             '<div class="ody_builder_parameter">' +
             '<label>Link</label>' +
-            '<input type="text" id="' + urlId + '" class="listbox wdg-cb-button-url" value="' + $('<div>').text(data.button_url || '').html() + '">' +
+            '<input type="text" id="' + urlId + '" class="listbox wdg-cb-button-url" value="' + escapeForTextarea(data.button_url || '') + '">' +
             '<select class="selectLink listbox" onchange="wdgChkbSetLink($(this).val(), \'' + urlId + '\', ' + idx + '); $(this).val(\'\');">' +
-            '<option value=""><?php echo t("ή επιλέξτε υπάρχουσα σελίδα"); ?></option>' +
-            '<option value="homepage"><?php echo t("ΑΡΧΙΚΗ ΣΕΛΙΔΑ"); ?></option>'
+            '<option value="">' + transOrSelect + '</option>' +
+            '<option value="homepage">' + transHome + '</option>'
         );
         
         // Add pages from database
+        var $select = $contentFields.find('select').last();
         for (var i = 0; i < pagesData.length; i++) {
-            $contentFields.find('select').append('<option value="' + pagesData[i].id + '">' + pagesData[i].title + '</option>');
+            $select.append('<option value="' + pagesData[i].id + '">' + pagesData[i].title + '</option>');
         }
         
-        $contentFields.find('select').append(
+        $select.append(
             '<option value="divider">--------------------------------------</option>' +
-            '<option value="nodeLinks_chkb"><?php echo t("Link για εγγραφή ενότητας") . " >>"; ?></option>' +
+            '<option value="nodeLinks_chkb">' + transSectionLink + ' >></option>' +
             '<option value="divider">--------------------------------------</option>' +
-            '<option value="fileLinks_chkb"><?php echo t("Link για αρχείο") . " >>"; ?></option>' +
+            '<option value="fileLinks_chkb">' + transFileLink + ' >></option>' +
             '</select>' +
             '</div>'
         );
@@ -327,30 +461,29 @@ jQuery(function ($) {
         $contentFields.append(
             '<div class="ody_builder_parameter">' +
             '<div class="admin_checkbox_wrapper" style="margin: 0 0 10px;">' +
-            '<input type="checkbox" class="wdg-cb-open-new" value="1" ' + (isChecked ? 'checked' : '') + '>' +
-            '<p><?php echo t("Άνοιγμα σε νέο tab"); ?></p>' +
+            '<input type="checkbox" id="wdg_cb_btntab_' + uid + '" class="wdg-cb-open-new" value="1" ' + (isChecked ? 'checked' : '') + '>' +
+            '<p>' + transNewTab + '</p>' +
             '</div>' +
             '</div>'
         );
         
         $body.append($contentFields);
 
-        // Image fields (χωρίς ALT)
+        // Image fields
         var $imageFields = $('<div class="wdg-image-fields" style="' + (type !== 'image' ? 'display:none' : '') + '">');
         $imageFields.append(
             '<div class="ody_builder_parameter">' +
-            '<label><?php echo t("Εικόνα"); ?></label>' +
+            '<label>' + transImgLabel + '</label>' +
             '<div class="wdg-img-row">' +
-            '<span id="' + imgId + '_display" class="wdg-img-filename"><?php echo t("Επιλέξτε..."); ?></span>' +
+            '<span id="' + imgId + '_display" class="wdg-img-filename">' + transSelectImg + '</span>' +
             '<a href="ody_builder_mediabank.php?blockType=widgetizer&langID=<?php echo $langID; ?>"' +
             ' id="' + mediaId + '"' +
             ' class="wdg-cb-select-media ody_builder_content_action btn btn-success"' +
-            ' data-vbtype="iframe" data-wdg-target="' + imgId + '"><?php echo t("Επιλογή"); ?></a>' +
-            '<a href="javascript:void(0)" id="' + imgId + '_remove" class="ody_builder_content_action btn btn-danger" style="visibility:' + (data.image ? 'visible' : 'hidden') + ';"' +
-            ' onclick="$(\'#' + imgId + '\').val(\'\'); $(\'#' + imgId + '_display\').text(\'<?php echo t("Επιλέξτε..."); ?>\'); $(\'#' + imgId + '_preview\').hide().attr(\'src\',\'\'); $(\'#' + imgId + '_remove\').css(\'visibility\',\'hidden\');"><?php echo t("Αφαίρεση"); ?></a>' +
+            ' data-vbtype="iframe" data-wdg-target="' + imgId + '">' + transSelectBtn + '</a>' +
+            '<a href="javascript:void(0)" id="' + imgId + '_remove" class="ody_builder_content_action btn btn-danger" style="visibility:' + (data.image ? 'visible' : 'hidden') + ';">' + transRemove + '</a>' +
             '</div>' +
-            '<input type="hidden" id="' + imgId + '" class="wdg-cb-image" value="' + $('<div>').text(data.image || '').html() + '">' +
-            '<img id="' + imgId + '_preview" class="wdg-img-preview" src="' + $('<div>').text(data.image || '').html() + '" style="' + (data.image ? 'display:block' : 'display:none') + '">' +
+            '<input type="hidden" id="' + imgId + '" class="wdg-cb-image" value="' + escapeForTextarea(data.image || '') + '">' +
+            '<img id="' + imgId + '_preview" class="wdg-img-preview" src="' + escapeForTextarea(data.image || '') + '" style="' + (data.image ? 'display:block' : 'display:none') + '">' +
             '</div>'
         );
         $body.append($imageFields);
@@ -363,42 +496,68 @@ jQuery(function ($) {
             $('#' + imgId + '_display').text(data.image.split('/').pop());
         }
 
-        // Type change handler
+        // ── Title input handler for display update ───────────────────────────
+        $('#wdg_cb_title_' + uid).on('input', function() {
+            updateTitleDisplay($item, uid);
+        });
+
+        // ── Remove image handler ──────────────────────────────────────────────
+        $('#' + imgId + '_remove').on('click', function() {
+            $('#' + imgId).val('');
+            $('#' + imgId + '_display').text(transSelectImg);
+            $('#' + imgId + '_preview').hide().attr('src', '');
+            $(this).css('visibility', 'hidden');
+        });
+
+        // ── Type change handler ───────────────────────────────────────────────
         $item.find('.wdg-cb-type').on('change', function() {
             var newType = $(this).val();
             if (newType === 'content') {
                 $item.find('.wdg-content-fields').show();
                 $item.find('.wdg-image-fields').hide();
-                $item.find('.wdg-cb-item-header span').text('📝 Κείμενο');
             } else {
                 $item.find('.wdg-content-fields').hide();
                 $item.find('.wdg-image-fields').show();
-                $item.find('.wdg-cb-item-header span').text('🖼️ Εικόνα');
             }
         });
 
-        // Remove button
-        $item.find('.wdg-item-remove').on('click', function () {
-            $item.fadeOut(200, function () { $item.remove(); });
+        // ── Move buttons events ───────────────────────────────────────────────
+        $item.find('.wdg-cb-move-up').on('click', function(e) {
+            e.stopPropagation();
+            moveItemUp($item);
+        });
+        
+        $item.find('.wdg-cb-move-down').on('click', function(e) {
+            e.stopPropagation();
+            moveItemDown($item);
         });
 
-        // Re-init VenoBox for new media button
+        // ── Remove button ─────────────────────────────────────────────────────
+        $item.find('.wdg-item-remove').on('click', function () {
+            $item.fadeOut(200, function() { 
+                $item.remove();
+                renumberItems();
+            });
+        });
+
+        // ── VenoBox for media button ──────────────────────────────────────────
         new VenoBox({selector: '#' + mediaId, fitView: true, ratio: 'full'});
         $('#' + mediaId).on('click', function () {
             window._wdg_mediabank_caller = this;
         });
 
-        // Hidden link picker popups — per item (μετά το DOM insertion)
-        $('#wdg_checkerboard_items').append(
-            '<a id="wdg_chkb_node_popup_' + idx + '" class="builder_popup" data-vbtype="iframe"' +
-            ' href="section_links.php?venobox=[id]' + urlId + '" style="display:none;">iFrame</a>'
+        // ── Hidden link picker popups ─────────────────────────────────────────
+        $('#wdg_cb_popups_container').append(
+            '<a id="' + nodePop + '" class="builder_popup" data-vbtype="iframe" href="section_links.php?venobox=[id]' + urlId + '" style="display:none;">iFrame</a>'
         );
-        $('#wdg_checkerboard_items').append(
-            '<a id="wdg_chkb_file_popup_' + idx + '" class="builder_popup" data-vbtype="iframe"' +
-            ' href="file_links.php?venobox=[id]' + urlId + '" style="display:none;">iFrame</a>'
+        $('#wdg_cb_popups_container').append(
+            '<a id="' + filePop + '" class="builder_popup" data-vbtype="iframe" href="file_links.php?venobox=[id]' + urlId + '" style="display:none;">iFrame</a>'
         );
-        new VenoBox({selector: '#wdg_chkb_node_popup_' + idx, fitView: true, ratio: 'full'});
-        new VenoBox({selector: '#wdg_chkb_file_popup_' + idx, fitView: true, ratio: 'full'});
+        new VenoBox({selector: '#' + nodePop, fitView: true, ratio: 'full'});
+        new VenoBox({selector: '#' + filePop, fitView: true, ratio: 'full'});
+
+        // Initial title display update
+        updateTitleDisplay($item, uid);
     }
 
     // Load saved items
@@ -406,22 +565,22 @@ jQuery(function ($) {
         addItem(item);
     });
 
+    // Renumbering immediately after all initial items are rendered to fix potential index strings
+    renumberItems();
+
     // Add new item
     $('#wdg_cb_add_btn').on('click', function () {
         addItem({});
+        var $lastItem = $('#wdg_checkerboard_items .wdg-cb-item').last();
+        if ($lastItem.length) {
+            $('html, body').animate({
+                scrollTop: $lastItem.offset().top - 100
+            }, 300);
+        }
     });
 
-    // Sortable
-    if ($.fn.sortable) {
-        $('#wdg_checkerboard_items').sortable({
-            handle: '.wdg-cb-item-header',
-            placeholder: 'block-placeholder',
-            tolerance: 'pointer'
-        });
-    }
-
     // Label
-    label = 'Widget Checkerboard';
+    var label = 'Widget Checkerboard';
     $('#ody_builder_admin_label').val(label);
     $('.ody_builder_header h2').html('Widgetizer — Checkerboard');
 
@@ -430,20 +589,23 @@ jQuery(function ($) {
         var items = [];
         $('#wdg_checkerboard_items .wdg-cb-item').each(function () {
             var $it = $(this);
+            var idx = $it.data('idx');
+            var uid = 'cb_' + idx;
             var type = $it.find('.wdg-cb-type').val();
+            
             if (type === 'content') {
                 items.push({
                     type: 'content',
-                    title: $it.find('.wdg-cb-title').val(),
-                    description: $it.find('.wdg-cb-description').val(),
-                    button_label: $it.find('.wdg-cb-button-label').val(),
-                    button_url: $it.find('.wdg-cb-button-url').val(),
-                    open_new: $it.find('.wdg-cb-open-new').is(':checked') ? '_blank' : '_self'
+                    title: $('#wdg_cb_title_' + uid).val(),
+                    description: $('#wdg_cb_description_' + uid).val(),
+                    button_label: $('#wdg_cb_btnlabel_' + uid).val(),
+                    button_url: $('#wdg_cb_url_' + uid).val(),
+                    open_new: $('#wdg_cb_btntab_' + uid).is(':checked') ? '_blank' : '_self'
                 });
             } else {
                 items.push({
                     type: 'image',
-                    image: $it.find('.wdg-cb-image').val()
+                    image: $('#wdg_cb_img_' + uid).val()
                 });
             }
         });

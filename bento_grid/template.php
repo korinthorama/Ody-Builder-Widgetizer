@@ -86,6 +86,19 @@ foreach ($_items as $_i => $_item) {
     $_item_overlay     = _wdg_bg_hex_to_rgba($_item_overlay_hex, $_item_opacity);
     $_item_align       = htmlspecialchars($_item['align']           ?? 'align-start');
     $_item_color       = htmlspecialchars($_item['color_scheme']    ?? 'color-scheme-standard-primary');
+    
+    // ── Link parameters ───────────────────────────────────────────────────────
+    $_item_link_url    = $_item['link_url'] ?? '';
+    $_item_link_newtab = ($_item['link_newtab'] ?? '0') === '1';
+    $_has_link         = !empty($_item_link_url);
+    
+    // Χρήση της global wdg_parse_links() όπως στο checkerboard
+    if ($_has_link) {
+        $_item_link_url = htmlspecialchars(wdg_parse_links($_item_link_url));
+    }
+    
+    $_link_target = $_item_link_newtab ? ' target="_blank" rel="noopener noreferrer"' : '';
+    $_link_attrs  = $_has_link ? ' href="' . $_item_link_url . '"' . $_link_target : '';
 
     $_item_classes = 'bento-item block-item ' . $_item_align . ' reveal reveal-scale';
     if ($_item_bg) $_item_classes .= ' has-bg-image has-overlay';
@@ -94,22 +107,36 @@ foreach ($_items as $_i => $_item) {
     if ($_item_bg)      $_item_style .= ' --bento-bg-image: url(\'' . $_item_bg . '\');';
     if ($_item_overlay) $_item_style .= ' --widget-overlay-color: ' . $_item_overlay . ';';
 
-    $_items_html .= '
-          <div class="' . $_item_classes . ' ' . $_item_color . '"
-               style="' . $_item_style . '"
-               data-block-id="' . $_item_block_id . '">
+    // Build item HTML (with or without <a> wrapper)
+    $_item_inner_html = '
             <div class="bento-content">';
 
     if ($_item_title !== '') {
-        $_items_html .= '<h2 class="w-headline t-lg" data-setting="title">' . $_item_title . '</h2>';
+        $_item_inner_html .= '<h2 class="w-headline t-lg" data-setting="title">' . $_item_title . '</h2>';
     }
     if ($_item_text !== '') {
-        $_items_html .= '<p class="w-body t-sm" data-setting="text">' . $_item_text . '</p>';
+        $_item_inner_html .= '<p class="w-body t-sm" data-setting="text">' . $_item_text . '</p>';
     }
 
-    $_items_html .= '
-            </div>
+    $_item_inner_html .= '
+            </div>';
+
+    // Wrap with <a> if link exists
+    if ($_has_link) {
+        $_items_html .= '
+          <a class="' . $_item_classes . ' ' . $_item_color . '"
+               style="' . $_item_style . '"
+               data-block-id="' . $_item_block_id . '"' . $_link_attrs . '>' .
+               $_item_inner_html . '
+          </a>';
+    } else {
+        $_items_html .= '
+          <div class="' . $_item_classes . ' ' . $_item_color . '"
+               style="' . $_item_style . '"
+               data-block-id="' . $_item_block_id . '">' .
+               $_item_inner_html . '
           </div>';
+    }
 }
 
 // ── Output ────────────────────────────────────────────────────────────────────
@@ -143,6 +170,16 @@ echo $_wdg_asset_html;
       transition: border-color 0.3s ease;
       min-height: 200px;
       justify-content: flex-end;
+    }
+
+    /* Link styling - inherit colors and remove default link underline */
+    .widget-<?php echo $_widget_class; ?> a.bento-item {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .widget-<?php echo $_widget_class; ?> a.bento-item:hover {
+      border-color: var(--border-color);
     }
 
     .widget-<?php echo $_widget_class; ?> .bento-item.has-bg-color,

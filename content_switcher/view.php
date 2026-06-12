@@ -33,6 +33,7 @@ $_pages = $db->getRecords($q);
         border-radius: 4px;
         margin-bottom: 8px;
         background: #f9f9f9;
+        transition: box-shadow 0.3s ease;
     }
 
     .wdg-csw-tab-header {
@@ -42,13 +43,15 @@ $_pages = $db->getRecords($q);
         padding: 6px 8px;
         background: #1a4a5a;
         border-radius: 4px 4px 0 0;
-        cursor: move;
     }
 
     .wdg-csw-tab-header span {
         color: white;
         font-size: 12px;
         flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .wdg-csw-tab-body {
@@ -66,6 +69,7 @@ $_pages = $db->getRecords($q);
         border-radius: 4px;
         margin-bottom: 6px;
         background: #f0f4f4;
+        transition: box-shadow 0.3s ease;
     }
 
     .wdg-csw-card-header {
@@ -75,13 +79,15 @@ $_pages = $db->getRecords($q);
         padding: 5px 8px;
         background: #002e3a;
         border-radius: 4px 4px 0 0;
-        cursor: move;
     }
 
     .wdg-csw-card-header span {
         color: white;
         font-size: 11px;
         flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .wdg-csw-card-body {
@@ -163,6 +169,32 @@ $_pages = $db->getRecords($q);
         border-radius: 3px;
         display: none;
         border: 1px solid #ddd;
+    }
+
+    /* ── Βελάκια μετακίνησης ── */
+    .wdg-csw-move-buttons {
+        display: flex;
+        gap: 4px;
+        margin-right: 4px;
+    }
+
+    .wdg-csw-move-btn {
+        background: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 2px 4px;
+        border-radius: 3px;
+        transition: all 0.2s;
+    }
+
+    .wdg-csw-move-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .wdg-csw-move-btn:active {
+        transform: scale(0.9);
     }
 </style>
 <!-- ══ ΓΕΝΙΚΑ ════════════════════════════════════════════════════════════════ -->
@@ -260,14 +292,15 @@ $_page_opts_html .= '<option value="fileLinks_csw">' . t("Link για αρχεί
         var _page_opts = <?php echo json_encode($_page_opts_html); ?>;
         var _tab_idx = 0;
         var _card_idx = {};
-        // ── VenoBox για mediabank ─────────────────────────────────────────────────
+
+        // ── VenoBox για mediabank ─────────────────────────────────────────────
         window.venobox = new VenoBox({selector: '.wdg-csw-select-media', fitView: true, ratio: 'full'});
         $('.wdg-csw-select-media').on('click', function () {
             window._wdg_mediabank_caller = this;
         });
         window.odyRecieveMediabank = function (file, id, ext, image_path, callerEl) {
             var targetId = $(callerEl).data('wdg-target');
-            if(!targetId) return;
+            if (!targetId) return;
             var fullPath = image_path + id + '.' + ext;
             $('#' + targetId).val(fullPath);
             $('#' + targetId + '_display').text(file);
@@ -275,10 +308,106 @@ $_page_opts_html .= '<option value="fileLinks_csw">' . t("Link για αρχεί
             $('#' + targetId + '_remove').css('visibility', 'visible');
         };
 
-        // ── Add Card ──────────────────────────────────────────────────────────────
+        // ── Tab display ───────────────────────────────────────────────────────
+        function updateTabDisplay($item) {
+            var labelVal = $item.find('.wdg-csw-tab-label').val();
+            var tabNumber = $item.index() + 1;
+            var displayText = 'Tab ' + tabNumber;
+            if (labelVal && labelVal.trim() !== '') {
+                displayText += ': ' + labelVal;
+            }
+            $item.find('> .wdg-csw-tab-header span').text(displayText);
+        }
+
+        function renumberTabs() {
+            $('#wdg_csw_tabs .wdg-csw-tab-item').each(function () {
+                updateTabDisplay($(this));
+            });
+        }
+
+        // ── Move tabs ─────────────────────────────────────────────────────────
+        function moveTabUp($item) {
+            var $prev = $item.prev('.wdg-csw-tab-item');
+            if ($prev.length) {
+                $item.slideUp(1, function () {
+                    $item.insertBefore($prev);
+                    $item.slideDown(1, function () {
+                        renumberTabs();
+                        $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                        $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                        setTimeout(function () { $item.css('box-shadow', ''); }, 100);
+                    });
+                });
+            }
+        }
+
+        function moveTabDown($item) {
+            var $next = $item.next('.wdg-csw-tab-item');
+            if ($next.length) {
+                $item.slideUp(1, function () {
+                    $item.insertAfter($next);
+                    $item.slideDown(1, function () {
+                        renumberTabs();
+                        $('html, body').animate({ scrollTop: $item.offset().top - 100 }, 300);
+                        $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                        setTimeout(function () { $item.css('box-shadow', ''); }, 100);
+                    });
+                });
+            }
+        }
+
+        // ── Card display ──────────────────────────────────────────────────────
+        function updateCardDisplay($card, $cardsList) {
+            var titleVal = $card.find('.wdg-csw-card-title').val();
+            var cardNumber = $card.index() + 1;
+            var displayText = '<?php echo t("Κάρτα"); ?> ' + cardNumber;
+            if (titleVal && titleVal.trim() !== '') {
+                displayText += ': ' + titleVal;
+            }
+            $card.find('> .wdg-csw-card-header span').text(displayText);
+        }
+
+        function renumberCards($cardsList) {
+            $cardsList.find('.wdg-csw-card-item').each(function () {
+                updateCardDisplay($(this), $cardsList);
+            });
+        }
+
+        // ── Move cards ────────────────────────────────────────────────────────
+        function moveCardUp($card, $cardsList) {
+            var $prev = $card.prev('.wdg-csw-card-item');
+            if ($prev.length) {
+                $card.slideUp(1, function () {
+                    $card.insertBefore($prev);
+                    $card.slideDown(1, function () {
+                        renumberCards($cardsList);
+                        $('html, body').animate({ scrollTop: $card.offset().top - 100 }, 300);
+                        $card.css('box-shadow', '0 0 0 2px #fbbf24');
+                        setTimeout(function () { $card.css('box-shadow', ''); }, 100);
+                    });
+                });
+            }
+        }
+
+        function moveCardDown($card, $cardsList) {
+            var $next = $card.next('.wdg-csw-card-item');
+            if ($next.length) {
+                $card.slideUp(1, function () {
+                    $card.insertAfter($next);
+                    $card.slideDown(1, function () {
+                        renumberCards($cardsList);
+                        $('html, body').animate({ scrollTop: $card.offset().top - 100 }, 300);
+                        $card.css('box-shadow', '0 0 0 2px #fbbf24');
+                        setTimeout(function () { $card.css('box-shadow', ''); }, 100);
+                    });
+                });
+            }
+        }
+
+        // ── Add Card ──────────────────────────────────────────────────────────
         function addCard(tabIdx, cardData, $cardsList) {
             cardData = cardData || {};
-            if(!_card_idx[tabIdx]) _card_idx[tabIdx] = 0;
+            if (!_card_idx[tabIdx]) _card_idx[tabIdx] = 0;
             var ci = _card_idx[tabIdx]++;
             var uid = 'csw_' + tabIdx + '_' + ci;
             var imgId = 'wdg_csw_img_' + uid;
@@ -287,21 +416,30 @@ $_page_opts_html .= '<option value="fileLinks_csw">' . t("Link για αρχεί
             var nodePopupId = 'wdg_csw_node_' + uid;
             var filePopupId = 'wdg_csw_file_' + uid;
             var $card = $('<div class="wdg-csw-card-item" data-ci="' + ci + '">');
-            $card.append('<div class="wdg-csw-card-header"><span><?php echo t("Κάρτα"); ?> ' + (ci + 1) + '</span><button class="wdg-item-remove" type="button">✕</button></div>');
+            $card.append(
+                '<div class="wdg-csw-card-header">' +
+                '<div class="wdg-csw-move-buttons">' +
+                '<button type="button" class="wdg-csw-move-btn wdg-csw-card-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+                '<button type="button" class="wdg-csw-move-btn wdg-csw-card-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+                '</div>' +
+                '<span><?php echo t("Κάρτα"); ?> ' + ($cardsList.find('.wdg-csw-card-item').length + 1) + '</span>' +
+                '<button class="wdg-item-remove" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
+                '</div>'
+            );
             var $body = $('<div class="wdg-csw-card-body">');
             // Image
             $body.append(
-                    '<div class="ody_builder_parameter"><label><?php echo t("Εικόνα"); ?></label>' +
-                    '<div class="wdg-img-row">' +
-                    '<span id="' + imgId + '_display" class="wdg-img-filename"><?php echo t("Επιλέξτε..."); ?></span>' +
-                    '<a href="ody_builder_mediabank.php?blockType=widgetizer&langID=<?php echo $langID; ?>" id="' + mediaId + '"' +
-                    ' class="wdg-csw-select-media ody_builder_content_action btn btn-success" data-vbtype="iframe" data-wdg-target="' + imgId + '"><?php echo t("Επιλογή"); ?></a>' +
-                    '<a href="javascript:void(0)" id="' + imgId + '_remove" class="ody_builder_content_action btn btn-danger" style="visibility:hidden;"' +
-                    ' onclick="$(\'#' + imgId + '\').val(\'\'); $(\'#' + imgId + '_display\').text(\'<?php echo t("Επιλέξτε..."); ?>\'); $(\'#' + imgId + '_preview\').hide().attr(\'src\',\'\'); $(\'#' + imgId + '_remove\').css(\'visibility\',\'hidden\');"><?php echo t("Αφαίρεση"); ?></a>' +
-                    '</div>' +
-                    '<input type="hidden" id="' + imgId + '" class="wdg-csw-card-image" value="">' +
-                    '<img id="' + imgId + '_preview" class="wdg-img-preview" src="" alt="">' +
-                    '</div>'
+                '<div class="ody_builder_parameter"><label><?php echo t("Εικόνα"); ?></label>' +
+                '<div class="wdg-img-row">' +
+                '<span id="' + imgId + '_display" class="wdg-img-filename"><?php echo t("Επιλέξτε..."); ?></span>' +
+                '<a href="ody_builder_mediabank.php?blockType=widgetizer&langID=<?php echo $langID; ?>" id="' + mediaId + '"' +
+                ' class="wdg-csw-select-media ody_builder_content_action btn btn-success" data-vbtype="iframe" data-wdg-target="' + imgId + '"><?php echo t("Επιλογή"); ?></a>' +
+                '<a href="javascript:void(0)" id="' + imgId + '_remove" class="ody_builder_content_action btn btn-danger" style="visibility:hidden;"' +
+                ' onclick="$(\'#' + imgId + '\').val(\'\'); $(\'#' + imgId + '_display\').text(\'<?php echo t("Επιλέξτε..."); ?>\'); $(\'#' + imgId + '_preview\').hide().attr(\'src\',\'\'); $(\'#' + imgId + '_remove\').css(\'visibility\',\'hidden\');"><?php echo t("Αφαίρεση"); ?></a>' +
+                '</div>' +
+                '<input type="hidden" id="' + imgId + '" class="wdg-csw-card-image" value="">' +
+                '<img id="' + imgId + '_preview" class="wdg-img-preview" src="" alt="">' +
+                '</div>'
             );
             // Title
             $body.append('<div class="ody_builder_parameter"><label><?php echo t("Τίτλος"); ?></label><input type="text" class="listbox wdg-csw-card-title" value="' + $('<div>').text(cardData.title || '').html() + '"></div>');
@@ -313,21 +451,21 @@ $_page_opts_html .= '<option value="fileLinks_csw">' . t("Link για αρχεί
             $body.append('<div class="ody_builder_parameter"><label><?php echo t("Κείμενο κουμπιού"); ?></label><input type="text" class="listbox wdg-csw-card-btn-label" value="' + $('<div>').text(cardData.btn_label || '').html() + '"></div>');
             // Button URL
             $body.append(
-                    '<div class="ody_builder_parameter"><label>Link</label>' +
-                    '<input type="text" id="' + urlId + '" class="listbox wdg-csw-card-btn-url" value="">' +
-                    '<select class="selectLink listbox" onchange="wdgCswSetLink($(this).val(),\'' + urlId + '\',\'' + uid + '\'); $(this).val(\'\');">' + _page_opts + '</select>' +
-                    '</div>'
+                '<div class="ody_builder_parameter"><label>Link</label>' +
+                '<input type="text" id="' + urlId + '" class="listbox wdg-csw-card-btn-url" value="">' +
+                '<select class="selectLink listbox" onchange="wdgCswSetLink($(this).val(),\'' + urlId + '\',\'' + uid + '\'); $(this).val(\'\');">' + _page_opts + '</select>' +
+                '</div>'
             );
             // New tab
             $body.append('<div class="ody_builder_parameter"><div class="admin_checkbox_wrapper" style="margin: 0 0 10px;"><input type="checkbox" class="wdg-csw-card-btn-new-tab" value="1"><p><?php echo t("Άνοιγμα σε νέο tab"); ?></p></div></div>');
             // Button style
-            $body.append('<div class="ody_builder_parameter"><label><<?php echo t("Εμφάνιση κουμπιού"); ?></label><select class="listbox wdg-csw-card-btn-style"><option value="widget-button-primary">Primary</option><option value="widget-button-secondary">Secondary</option></select></div>');
+            $body.append('<div class="ody_builder_parameter"><label><?php echo t("Εμφάνιση κουμπιού"); ?></label><select class="listbox wdg-csw-card-btn-style"><option value="widget-button-primary">Primary</option><option value="widget-button-secondary">Secondary</option></select></div>');
             $card.append($body);
             $cardsList.append($card);
             // Hidden popups
             $card.append(
-                    '<a id="' + nodePopupId + '" class="builder_popup" data-vbtype="iframe" href="section_links.php?venobox=[id]' + urlId + '">iFrame</a>' +
-                    '<a id="' + filePopupId + '" class="builder_popup" data-vbtype="iframe" href="file_links.php?venobox=[id]' + urlId + '">iFrame</a>'
+                '<a id="' + nodePopupId + '" class="builder_popup" data-vbtype="iframe" href="section_links.php?venobox=[id]' + urlId + '">iFrame</a>' +
+                '<a id="' + filePopupId + '" class="builder_popup" data-vbtype="iframe" href="file_links.php?venobox=[id]' + urlId + '">iFrame</a>'
             );
             new VenoBox({selector: '#' + nodePopupId, fitView: true, ratio: 'full'});
             new VenoBox({selector: '#' + filePopupId, fitView: true, ratio: 'full'});
@@ -336,32 +474,57 @@ $_page_opts_html .= '<option value="fileLinks_csw">' . t("Link για αρχεί
                 window._wdg_mediabank_caller = this;
             });
             // Φόρτωση τιμών
-            if(cardData.image) {
+            if (cardData.image) {
                 $('#' + imgId).val(cardData.image);
                 $('#' + imgId + '_display').text(cardData.image.split('/').pop());
                 $('#' + imgId + '_preview').attr('src', cardData.image).show();
                 $('#' + imgId + '_remove').css('visibility', 'visible');
             }
-            if(cardData.btn_url) $('#' + urlId).val(cardData.btn_url);
-            if(cardData.btn_new_tab == '1') $card.find('.wdg-csw-card-btn-new-tab').prop('checked', true);
+            if (cardData.btn_url) $('#' + urlId).val(cardData.btn_url);
+            if (cardData.btn_new_tab == '1') $card.find('.wdg-csw-card-btn-new-tab').prop('checked', true);
             $card.find('.wdg-csw-card-btn-style').val(cardData.btn_style || 'widget-button-secondary');
+
+            // ── Real-time title update ────────────────────────────────────────
+            $card.find('.wdg-csw-card-title').on('input', function () {
+                updateCardDisplay($card, $cardsList);
+            });
+
+            // ── Move buttons ──────────────────────────────────────────────────
+            $card.find('.wdg-csw-card-move-up').on('click', function (e) {
+                e.stopPropagation();
+                moveCardUp($card, $cardsList);
+            });
+            $card.find('.wdg-csw-card-move-down').on('click', function (e) {
+                e.stopPropagation();
+                moveCardDown($card, $cardsList);
+            });
+
             $card.find('.wdg-item-remove').on('click', function () {
                 $card.fadeOut(200, function () {
                     $card.remove();
+                    renumberCards($cardsList);
                 });
             });
-            if($.fn.sortable) {
-                $cardsList.sortable({handle: '.wdg-csw-card-header', placeholder: 'block-placeholder', tolerance: 'pointer'});
-            }
+
+            updateCardDisplay($card, $cardsList);
         }
 
-        // ── Add Tab ───────────────────────────────────────────────────────────────
+        // ── Add Tab ───────────────────────────────────────────────────────────
         function addTab(data) {
             data = data || {};
             var ti = _tab_idx++;
             _card_idx[ti] = 0;
             var $item = $('<div class="wdg-csw-tab-item" data-ti="' + ti + '">');
-            $item.append('<div class="wdg-csw-tab-header"><span>Tab ' + (ti + 1) + '</span><button class="wdg-item-remove" type="button">✕</button></div>');
+            $item.append(
+                '<div class="wdg-csw-tab-header">' +
+                '<div class="wdg-csw-move-buttons">' +
+                '<button type="button" class="wdg-csw-move-btn wdg-csw-tab-move-up" title="<?php echo t("Μετακίνηση πάνω"); ?>">▲</button>' +
+                '<button type="button" class="wdg-csw-move-btn wdg-csw-tab-move-down" title="<?php echo t("Μετακίνηση κάτω"); ?>">▼</button>' +
+                '</div>' +
+                '<span>Tab ' + ($('#wdg_csw_tabs .wdg-csw-tab-item').length + 1) + '</span>' +
+                '<button class="wdg-item-remove" type="button" style="border-radius:10px;width:20px;height:20px;font-size:11px !important;padding:0 !important;font-weight:bold;flex-shrink:0;">✕</button>' +
+                '</div>'
+            );
             var $body = $('<div class="wdg-csw-tab-body">');
             // Tab label
             $body.append('<div class="ody_builder_parameter"><label><?php echo t("Ετικέτα"); ?> Tab</label><input type="text" class="listbox wdg-csw-tab-label" value="' + $('<div>').text(data.label || '').html() + '"></div>');
@@ -383,43 +546,58 @@ $_page_opts_html .= '<option value="fileLinks_csw">' . t("Link για αρχεί
             $cardsWrapper.find('.wdg-csw-add-card-btn').on('click', function () {
                 addCard(ti, {}, $cardsList);
             });
+
+            // ── Real-time tab label update ────────────────────────────────────
+            $item.find('.wdg-csw-tab-label').on('input', function () {
+                updateTabDisplay($item);
+            });
+
+            // ── Move buttons ──────────────────────────────────────────────────
+            $item.find('.wdg-csw-tab-move-up').on('click', function (e) {
+                e.stopPropagation();
+                moveTabUp($item);
+            });
+            $item.find('.wdg-csw-tab-move-down').on('click', function (e) {
+                e.stopPropagation();
+                moveTabDown($item);
+            });
+
             // Remove tab
             $item.find('> .wdg-csw-tab-header .wdg-item-remove').on('click', function () {
                 $item.fadeOut(200, function () {
                     $item.remove();
+                    renumberTabs();
                 });
             });
+
+            updateTabDisplay($item);
         }
 
         // Φόρτωση tabs
-        _tabs.forEach(function (tab) {
-            addTab(tab);
-        });
-        $('#wdg_csw_add_tab_btn').on('click', function () {
-            addTab({});
-        });
-        if($.fn.sortable) {
-            $('#wdg_csw_tabs').sortable({handle: '.wdg-csw-tab-header', placeholder: 'block-placeholder', tolerance: 'pointer'});
-        }
-        // ── Link picker ───────────────────────────────────────────────────────────
+        _tabs.forEach(function (tab) { addTab(tab); });
+        $('#wdg_csw_add_tab_btn').on('click', function () { addTab({}); });
+
+        // ── Link picker ───────────────────────────────────────────────────────
         window.wdgCswSetLink = function (val, targetId, uid) {
-            if(!val || val === 'divider') return;
-            if(val === 'nodeLinks_csw') {
+            if (!val || val === 'divider') return;
+            if (val === 'nodeLinks_csw') {
                 document.getElementById('wdg_csw_node_' + uid).click();
                 return;
             }
-            if(val === 'fileLinks_csw') {
+            if (val === 'fileLinks_csw') {
                 document.getElementById('wdg_csw_file_' + uid).click();
                 return;
             }
             var link = (val === 'homepage') ? 'index.php' : '««index.php?section=pages~|||~view=render~|||~id=' + val + '»»';
             $('#' + targetId).val(link);
         };
-        // ── Label ─────────────────────────────────────────────────────────────────
+
+        // ── Label ─────────────────────────────────────────────────────────────
         label = 'Widget Content Switcher';
         $('#ody_builder_admin_label').val(label);
         $('.ody_builder_header h2').html('Widgetizer — Content Switcher');
-        // ── get_block_data ────────────────────────────────────────────────────────
+
+        // ── get_block_data ────────────────────────────────────────────────────
         window.get_block_data = function () {
             var tabs = [];
             $('#wdg_csw_tabs .wdg-csw-tab-item').each(function () {
@@ -445,7 +623,7 @@ $_page_opts_html .= '<option value="fileLinks_csw">' . t("Link για αρχεί
             });
             return {
                 widget_id: 'content_switcher',
-                params:    {
+                params: {
                     eyebrow:         $('#wdg_csw_eyebrow').val(),
                     title:           $('#wdg_csw_title').val(),
                     description:     $('#wdg_csw_description').val(),

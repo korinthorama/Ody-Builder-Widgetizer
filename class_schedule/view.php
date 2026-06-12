@@ -1,9 +1,7 @@
 <?php
 /*
  * Widgetizer — Class Schedule Widget — view.php
- *
- * Έχει πρόσβαση σε: $db, $langID, t(), _saved_params (JS)
- * Πρέπει να ορίσει: window.get_block_data(), label
+ * Refactored: Fixed 24-hour format saving/restoring
  */
 $_days = [
         'monday'    => t('Δευτέρα'),
@@ -82,6 +80,8 @@ $_pages = $db->getRecords($q);
         border-radius: 4px;
         margin-bottom: 8px;
         background: #f9f9f9;
+        overflow: hidden;
+        transition: box-shadow 0.3s ease;
     }
 
     .wdg-cs-class-header {
@@ -91,13 +91,41 @@ $_pages = $db->getRecords($q);
         padding: 6px 8px;
         background: #002e3a;
         border-radius: 4px 4px 0 0;
-        cursor: move;
     }
 
     .wdg-cs-class-header span {
         color: white;
         font-size: 12px;
         flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* ── Move buttons styling ── */
+    .wdg-cs-move-buttons {
+        display: flex;
+        gap: 4px;
+        margin-right: 4px;
+    }
+
+    .wdg-cs-move-btn {
+        background: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 11px;
+        padding: 2px 4px;
+        border-radius: 3px;
+        transition: all 0.2s;
+    }
+
+    .wdg-cs-move-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .wdg-cs-move-btn:active {
+        transform: scale(0.9);
     }
 
     .wdg-cs-class-body {
@@ -124,8 +152,16 @@ $_pages = $db->getRecords($q);
     .wdg-cs-add-class-btn:hover {
         background: #004a5c;
     }
+    
+    .block-placeholder {
+        background: #e0f0f0;
+        border: 2px dashed #002e3a;
+        height: 60px;
+        margin-bottom: 8px;
+        border-radius: 4px;
+    }
 </style>
-<!-- ══ ΓΕΝΙΚΑ ════════════════════════════════════════════════════════════════ -->
+
 <div class="wdg-section-title"><?php echo t("Γενικά"); ?></div>
 <div class="ody_builder_parameter">
     <label for="wdg_cs_eyebrow">Eyebrow</label>
@@ -178,7 +214,7 @@ $_pages = $db->getRecords($q);
         <option value="sunday"><?php echo t("Κυριακή"); ?></option>
     </select>
 </div>
-<!-- ══ ΕΜΦΑΝΙΣΗ ══════════════════════════════════════════════════════════════ -->
+
 <div class="wdg-section-title"><?php echo t("Εμφάνιση"); ?></div>
 <div class="ody_builder_parameter">
     <label for="wdg_cs_color_scheme"><?php echo t("Κύρια χρωματική παλέτα"); ?></label>
@@ -199,9 +235,9 @@ $_pages = $db->getRecords($q);
         <option value="sm">Small (760px)</option>
     </select>
 </div>
-<!-- ══ ΠΡΟΓΡΑΜΜΑ ═════════════════════════════════════════════════════════════ -->
+
 <div class="wdg-section-title"><?php echo t("Πρόγραμμα"); ?></div>
-<!-- Day tabs navigation -->
+
 <div class="wdg-cs-day-tabs">
     <?php foreach($_days as $day_key => $day_label): ?>
         <button type="button" class="wdg-cs-day-tab<?php echo $day_key === 'monday' ? ' is-active' : ''; ?>"
@@ -210,13 +246,13 @@ $_pages = $db->getRecords($q);
         </button>
     <?php endforeach; ?>
 </div>
-<!-- Day panels -->
+
 <?php foreach($_days as $day_key => $day_label): ?>
     <div class="wdg-cs-day-panel<?php echo $day_key === 'monday' ? ' is-active' : ''; ?>"
          id="wdg_cs_panel_<?php echo $day_key; ?>" data-day="<?php echo $day_key; ?>">
         <div class="ody_builder_parameter" style="margin: 0;">
             <div class="admin_checkbox_wrapper">
-                <input type="checkbox" style="margin-top: 2px !important;" id="wdg_cs_enabled_<?php echo $day_key; ?>" class="wdg-cs-book-new-tab" value="1">
+                <input type="checkbox" style="margin-top: 2px !important;" id="wdg_cs_enabled_<?php echo $day_key; ?>" class="wdg-cs-day-enabled" value="1">
                 <p><?php echo t("Ενεργή μέρα"); ?></p>
             </div>
         </div>
@@ -226,7 +262,9 @@ $_pages = $db->getRecords($q);
         </button>
     </div>
 <?php endforeach; ?>
-<!-- ══ HTML MARKUP ════════════════════════════════════════════════════════════ -->
+
+<div id="wdg_cs_popups_container" style="display:none;"></div>
+
 <?php
 // Page options για link pickers
 $_page_opts_html = '<option value="">' . t("ή επιλέξτε υπάρχουσα σελίδα") . '</option>';
@@ -239,237 +277,368 @@ $_page_opts_html .= '<option value="nodeLinks_cs">' . t("Link για εγγρα�
 $_page_opts_html .= '<option value="divider">--------------------------------------</option>';
 $_page_opts_html .= '<option value="fileLinks_cs">' . t("Link για αρχείο") . ' >></option>';
 ?>
+
 <script>
-    jQuery(function ($) {
-        var _p = _saved_params || {};
-        var _days_data = _p['days'] || {};
+jQuery(function ($) {
+    // ── Κανόνας 4: Απομόνωση PHP tags από inline JS strings ───────────────────
+    var transClass      = <?php echo json_encode(t("Μάθημα")); ?>;
+    var transRemove     = <?php echo json_encode(t("Αφαίρεση")); ?>;
+    var transMoveUp     = <?php echo json_encode(t("Μετακίνηση πάνω")); ?>;
+    var transMoveDown   = <?php echo json_encode(t("Μετακίνηση κάτω")); ?>;
+    var transHour       = <?php echo json_encode(t("Ώρα")); ?>;
+    var transDuration   = <?php echo json_encode(t("Διάρκεια σε λεπτά")); ?>;
+    var transClassTitle = <?php echo json_encode(t("Τίτλος Μαθήματος")); ?>;
+    var transInstructor = <?php echo json_encode(t("Εκπαιδευτής")); ?>;
+    var transLevel      = <?php echo json_encode(t("Επίπεδο δυσκολίας")); ?>;
+    var transDescription= <?php echo json_encode(t("Περιγραφή")); ?>;
+    var transBtnLabel   = <?php echo json_encode(t("Κείμενο κουμπιού")); ?>;
+    var transNewTab     = <?php echo json_encode(t("Άνοιγμα σε νέο tab")); ?>;
+    var transAllLevels  = <?php echo json_encode(t("Όλα τα επίπεδα")); ?>;
+    var transBeginner   = <?php echo json_encode(t("Αρχάριοι")); ?>;
+    var transIntermed   = <?php echo json_encode(t("Μέσο επίπεδο")); ?>;
+    var transAdvanced   = <?php echo json_encode(t("Προχωρημένοι")); ?>;
 
-        function pval(key, def) {
-            return (_p[key] !== undefined && _p[key] !== '') ? _p[key] : (def !== undefined ? def : '');
-        }
+    var _p = _saved_params || {};
+    var _days_data = _p['days'] || {};
 
-        // ── Φόρτωση γενικών ──────────────────────────────────────────────────────
-        $('#wdg_cs_eyebrow').val(pval('eyebrow'));
-        $('#wdg_cs_title').val(pval('title'));
-        $('#wdg_cs_subheading').val(pval('subheading'));
-        $('#wdg_cs_footer_notes').val(pval('footer_notes'));
-        $('#wdg_cs_header_align').val(pval('header_align', 'center'));
-        $('#wdg_cs_layout').val(pval('layout', 'tabs'));
-        $('#wdg_cs_default_day').val(pval('default_day', 'today'));
-        $('#wdg_cs_week_start').val(pval('week_start', 'monday'));
-        $('#wdg_cs_color_scheme').val(pval('color_scheme', 'color-scheme-standard-primary'));
-        $('#wdg_cs_container_width').val(pval('container_width', 'xl'));
-        // ── Default HTML Markup ───────────────────────────────────────────────────
-        // ── Page options ──────────────────────────────────────────────────────────
-        var _page_opts = <?php echo json_encode($_page_opts_html); ?>;
-        // ── Levels ────────────────────────────────────────────────────────────────
-        var _level_opts =
-                '<option value=""><?php echo t("Όλα τα επίπεδα"); ?></option>' +
-                '<option value="beginner"><?php echo t("Αρχάριοι"); ?></option>' +
-                '<option value="intermediate"><?php echo t("Μέσο επίπεδο"); ?></option>' +
-                '<option value="advanced"><?php echo t("Προχωρημένοι"); ?></option>';
-        // ── Day tabs ──────────────────────────────────────────────────────────────
-        $('.wdg-cs-day-tab').on('click', function () {
-            var day = $(this).data('day');
-            $('.wdg-cs-day-tab').removeClass('is-active');
-            $(this).addClass('is-active');
-            $('.wdg-cs-day-panel').removeClass('is-active');
-            $('#wdg_cs_panel_' + day).addClass('is-active');
-        });
-        // ── Class item repeater ───────────────────────────────────────────────────
-        var _class_idx = {};
-        var _days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-        _days.forEach(function (day) {
-            _class_idx[day] = 0;
-        });
+    function pval(key, def) {
+        return (_p[key] !== undefined && _p[key] !== '') ? _p[key] : (def !== undefined ? def : '');
+    }
 
-        function addClassItem(day, data) {
-            data = data || {};
-            var idx = _class_idx[day]++;
-            var uid = day + '_' + idx;
-            var urlId = 'wdg_cs_url_' + uid;
-            var nodePopupId = 'wdg_cs_node_' + uid;
-            var filePopupId = 'wdg_cs_file_' + uid;
-            var $item = $('<div class="wdg-cs-class-item" data-idx="' + idx + '">');
-            $item.append(
-                    '<div class="wdg-cs-class-header">' +
-                    '<span><?php echo t("Μάθημα"); ?> ' + ($('#wdg_cs_classes_' + day + ' .wdg-cs-class-item').length + 1) + '</span>' +
-                    '<button class="wdg-item-remove" type="button">✕</button>' +
-                    '</div>'
-            );
-            var $body = $('<div class="wdg-cs-class-body">');
-            // Time
-            // Time: number + format selector
-            var timeHour = data.time_hour || '';
-            var timeMin = data.time_min || '00';
-            var timeFmt = data.time_format || 'AM';
-            var timeMaxHour = (timeFmt === '24') ? 23 : 12;
-            $body.append(
-                    '<div class="ody_builder_parameter"><label><?php echo t("Ώρα"); ?></label>' +
-                    '<div style="display:flex;gap:6px;align-items:center;">' +
-                    '<input type="number" class="listbox wdg-cs-time-hour" min="0" max="' + timeMaxHour + '" step="1" style="max-width:70px;" value="' + $('<div>').text(timeHour).html() + '">' +
-                    '<span>:</span>' +
-                    '<input type="number" class="listbox wdg-cs-time-min" min="0" max="59" step="1" style="max-width:70px;" value="' + $('<div>').text(timeMin).html() + '">' +
-                    '<select class="listbox wdg-cs-time-format" style="max-width:90px !important;">' +
-                    '<option value="AM">ΠΜ</option>' +
-                    '<option value="PM">ΜΜ</option>' +
-                    '<option value="24">24ωρο</option>' +
-                    '</select>' +
-                    '</div></div>'
-            );
-            $item.find('.wdg-cs-time-format').val(timeFmt);
-            // Duration
-            $body.append('<div class="ody_builder_parameter"><label><?php echo t("Διάρκεια σε λεπτά"); ?></label>' +
-                    '<input type="number" class="listbox wdg-cs-duration" min="1" max="480" step="1" style="max-width:100px;" value="' + $('<div>').text(data.duration || '').html() + '"></div>');
-            // Title
-            $body.append('<div class="ody_builder_parameter"><label><?php echo t("Τίτλος Μαθήματος"); ?></label>' +
-                    '<input type="text" class="listbox wdg-cs-class-title" value="' + $('<div>').text(data.title || '').html() + '"></div>');
-            // Instructor
-            $body.append('<div class="ody_builder_parameter"><label><?php echo t("Εκπαιδευτής"); ?></label>' +
-                    '<input type="text" class="listbox wdg-cs-instructor" value="' + $('<div>').text(data.instructor || '').html() + '"></div>');
-            // Level
-            $body.append('<div class="ody_builder_parameter"><label><?php echo t("Επίπεδο δυσκολίας"); ?></label>' +
-                    '<select class="listbox wdg-cs-level" style="max-width: 177px !important;">' + _level_opts + '</select></div>');
-            // Description
-            $body.append('<div class="ody_builder_parameter"><label><?php echo t("Περιγραφή"); ?></label>' +
-                    '<textarea class="listbox wdg-cs-description">' + $('<div>').text(data.description || '').html() + '</textarea></div>');
-            // Book label
-            $body.append('<div class="ody_builder_parameter"><label><?php echo t("Κείμενο κουμπιού"); ?></label>' +
-                    '<input type="text" class="listbox wdg-cs-book-label" value="' + $('<div>').text(data.book_label || '').html() + '"></div>');
-            // Book URL + picker
-            $body.append('<div class="ody_builder_parameter"><label>Link</label>' +
-                    '<input type="text" id="' + urlId + '" class="listbox wdg-cs-book-url" value="">' +
-                    '<select class="selectLink listbox" onchange="wdgCsSetLink($(this).val(),\'' + urlId + '\',\'' + uid + '\'); $(this).val(\'\');">' +
-                    _page_opts + '</select></div>');
-            // New tab checkbox
-            $body.append('<div class="ody_builder_parameter"><div class="admin_checkbox_wrapper" style="margin: 0 0 10px;">' +
-                    '<input type="checkbox" class="wdg-cs-book-new-tab" value="1">' +
-                    '<p><?php echo t("Άνοιγμα σε νέο tab"); ?></p></div></div>');
-            $item.append($body);
-            $('#wdg_cs_classes_' + day).append($item);
-            // Hidden popups
-            $item.append(
-                    '<a id="' + nodePopupId + '" class="builder_popup" data-vbtype="iframe"' +
-                    ' href="section_links.php?venobox=[id]' + urlId + '">iFrame</a>' +
-                    '<a id="' + filePopupId + '" class="builder_popup" data-vbtype="iframe"' +
-                    ' href="file_links.php?venobox=[id]' + urlId + '">iFrame</a>'
-            );
-            new VenoBox({selector: '#' + nodePopupId, fitView: true, ratio: 'full'});
-            new VenoBox({selector: '#' + filePopupId, fitView: true, ratio: 'full'});
-            // Φόρτωση τιμών
-            if(data.level) $item.find('.wdg-cs-level').val(data.level);
-            if(data.book_url) $('#' + urlId).val(data.book_url);
-            if(data.book_new_tab == '1') $item.find('.wdg-cs-book-new-tab').prop('checked', true);
-            // Remove
-            $item.find('.wdg-item-remove').on('click', function () {
-                $item.fadeOut(200, function () {
-                    $item.remove();
-                    renumberDayItems(day);
-                });
-            });
-            // Sortable
-            if($.fn.sortable) {
-                $('#wdg_cs_classes_' + day).sortable({
-                    handle:      '.wdg-cs-class-header',
-                    placeholder: 'block-placeholder',
-                    tolerance:   'pointer',
-                    stop:        function() { renumberDayItems(day); }
-                });
-            }
-        }
-
-        function renumberDayItems(day) {
-            $('#wdg_cs_classes_' + day + ' .wdg-cs-class-item').each(function (idx) {
-                $(this).find('.wdg-cs-class-header span').text('<?php echo t("Μάθημα"); ?> ' + (idx + 1));
-            });
-        }
-
-        // ── Φόρτωση αποθηκευμένων δεδομένων ──────────────────────────────────────
-        _days.forEach(function (day) {
-            var day_data = _days_data[day] || {};
-            if(day_data.enabled == '1' || day_data.enabled === true) {
-                $('#wdg_cs_enabled_' + day).prop('checked', true);
-            }
-            var classes = day_data.classes || [];
-            classes.forEach(function (cls) {
-                addClassItem(day, cls);
-            });
-        });
-        // ── Add class buttons ─────────────────────────────────────────────────────
-        $('.wdg-cs-add-class-btn').on('click', function () {
-            var day = $(this).data('day');
-            addClassItem(day, {});
-        });
-        // ── Link picker helper ────────────────────────────────────────────────────
-        window.wdgCsSetLink = function (val, targetId, uid) {
-            if(!val || val === 'divider') return;
-            if(val === 'nodeLinks_cs') {
-                document.getElementById('wdg_cs_node_' + uid).click();
-                return;
-            }
-            if(val === 'fileLinks_cs') {
-                document.getElementById('wdg_cs_file_' + uid).click();
-                return;
-            }
-            var link = (val === 'homepage') ? 'index.php' :
-                    '««index.php?section=pages~|||~view=render~|||~id=' + val + '»»';
-            $('#' + targetId).val(link);
-        };
-        // ── Time format: event delegation ────────────────────────────────────────
-        $(document).on('change', '.wdg-cs-time-format', function () {
-            var $it = $(this).closest('.wdg-cs-class-item');
-            var fmt = $(this).val();
-            var maxH = (fmt === '24') ? 23 : 12;
-            var minH = (fmt === '24') ? 0 : 1;
-            $it.find('.wdg-cs-time-hour').removeAttr('max').removeAttr('min').attr('max', maxH).attr('min', minH);
-        });
-        // ── Label ─────────────────────────────────────────────────────────────────
-        label = 'Widget Class Schedule';
-        $('#ody_builder_admin_label').val(label);
-        $('.ody_builder_header h2').html('Widgetizer — Class Schedule');
-        // ── get_block_data ────────────────────────────────────────────────────────
-        window.get_block_data = function () {
-            var days = {};
-            _days.forEach(function (day) {
-                var classes = [];
-                $('#wdg_cs_classes_' + day + ' .wdg-cs-class-item').each(function () {
-                    var $it = $(this);
-                    var uid_prefix = day + '_' + $it.data('idx');
-                    classes.push({
-                        time_hour:    $it.find('.wdg-cs-time-hour').val(),
-                        time_min:     $it.find('.wdg-cs-time-min').val(),
-                        time_format:  $it.find('.wdg-cs-time-format').val(),
-                        duration:     $it.find('.wdg-cs-duration').val(),
-                        title:        $it.find('.wdg-cs-class-title').val(),
-                        instructor:   $it.find('.wdg-cs-instructor').val(),
-                        level:        $it.find('.wdg-cs-level').val(),
-                        description:  $it.find('.wdg-cs-description').val(),
-                        book_label:   $it.find('.wdg-cs-book-label').val(),
-                        book_url:     $it.find('.wdg-cs-book-url').val(),
-                        book_new_tab: $it.find('.wdg-cs-book-new-tab').is(':checked') ? '1' : '0'
-                    });
-                });
-                days[day] = {
-                    enabled: $('#wdg_cs_enabled_' + day).is(':checked') ? '1' : '0',
-                    classes: classes
-                };
-            });
-            return {
-                widget_id: 'class_schedule',
-                params:    {
-                    eyebrow:         $('#wdg_cs_eyebrow').val(),
-                    title:           $('#wdg_cs_title').val(),
-                    subheading:      $('#wdg_cs_subheading').val(),
-                    footer_notes:    $('#wdg_cs_footer_notes').val(),
-                    header_align:    $('#wdg_cs_header_align').val(),
-                    layout:          $('#wdg_cs_layout').val(),
-                    default_day:     $('#wdg_cs_default_day').val(),
-                    week_start:      $('#wdg_cs_week_start').val(),
-                    color_scheme:    $('#wdg_cs_color_scheme').val(),
-                    container_width: $('#wdg_cs_container_width').val(),
-                    days:            days
-                }
-            };
-        };
+    // ── Φόρτωση γενικών ──────────────────────────────────────────────────────
+    $('#wdg_cs_eyebrow').val(pval('eyebrow'));
+    $('#wdg_cs_title').val(pval('title'));
+    $('#wdg_cs_subheading').val(pval('subheading'));
+    $('#wdg_cs_footer_notes').val(pval('footer_notes'));
+    $('#wdg_cs_header_align').val(pval('header_align', 'center'));
+    $('#wdg_cs_layout').val(pval('layout', 'tabs'));
+    $('#wdg_cs_default_day').val(pval('default_day', 'today'));
+    $('#wdg_cs_week_start').val(pval('week_start', 'monday'));
+    $('#wdg_cs_color_scheme').val(pval('color_scheme', 'color-scheme-standard-primary'));
+    $('#wdg_cs_container_width').val(pval('container_width', 'xl'));
+    
+    // ── Page options ──────────────────────────────────────────────────────────
+    var _page_opts = <?php echo json_encode($_page_opts_html); ?>;
+    
+    // ── Levels ────────────────────────────────────────────────────────────────
+    var _level_opts =
+            '<option value="">' + transAllLevels + '</option>' +
+            '<option value="beginner">' + transBeginner + '</option>' +
+            '<option value="intermediate">' + transIntermed + '</option>' +
+            '<option value="advanced">' + transAdvanced + '</option>';
+    
+    // ── Day tabs ──────────────────────────────────────────────────────────────
+    $('.wdg-cs-day-tab').on('click', function () {
+        var day = $(this).data('day');
+        $('.wdg-cs-day-tab').removeClass('is-active');
+        $(this).addClass('is-active');
+        $('.wdg-cs-day-panel').removeClass('is-active');
+        $('#wdg_cs_panel_' + day).addClass('is-active');
     });
+    
+    // ── Helper function to escape HTML ────────────────────────────────────────
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/&/g, '&amp;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;')
+                  .replace(/"/g, '&quot;')
+                  .replace(/'/g, '&#39;');
+    }
+    
+    // ── Helper function to update time hour max/min based on format ──────────
+    function updateTimeHourLimits($item) {
+        var fmt = $item.find('.wdg-cs-time-format').val();
+        var maxH = (fmt === '24') ? 23 : 12;
+        var minH = (fmt === '24') ? 0 : 1;
+        var $hourInput = $item.find('.wdg-cs-time-hour');
+        var currentVal = parseInt($hourInput.val()) || 0;
+        $hourInput.attr('max', maxH).attr('min', minH);
+        if (currentVal > maxH) $hourInput.val(maxH);
+        if (currentVal < minH) $hourInput.val(minH);
+    }
+
+    // ── Live Header Titles Update ────────────────────────────────────────────
+    function updateItemHeaderTitle($item, day) {
+        var titleVal = $item.find('.wdg-cs-class-title').val();
+        var itemIdx = $('#wdg_cs_classes_' + day + ' .wdg-cs-class-item').index($item) + 1;
+        var displayTxt = transClass + ' ' + itemIdx;
+        if (titleVal && titleVal.trim() !== '') {
+            displayTxt += ': ' + titleVal;
+        }
+        $item.find('.wdg-cs-class-header span').text(displayTxt);
+    }
+
+    // ── Move functions with smooth animations and focus scroll ──────────────
+    function moveItemUp($item, day) {
+        var $prev = $item.prev('.wdg-cs-class-item');
+        var speed = 120;
+        if ($prev.length) {
+            $item.slideUp(speed, function() {
+                $item.insertBefore($prev);
+                $item.slideDown(speed, function() {
+                    renumberDayItems(day);
+                    $('html, body').animate({
+                        scrollTop: $item.offset().top - 100
+                    }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 300);
+                });
+            });
+        }
+    }
+
+    function moveItemDown($item, day) {
+        var $next = $item.next('.wdg-cs-class-item');
+        var speed = 120;
+        if ($next.length) {
+            $item.slideUp(speed, function() {
+                $item.insertAfter($next);
+                $item.slideDown(speed, function() {
+                    renumberDayItems(day);
+                    $('html, body').animate({
+                        scrollTop: $item.offset().top - 100
+                    }, 300);
+                    $item.css('box-shadow', '0 0 0 2px #fbbf24');
+                    setTimeout(function() { $item.css('box-shadow', ''); }, 300);
+                });
+            });
+        }
+    }
+    
+    // ── Class item repeater ───────────────────────────────────────────────────
+    var _class_idx = {};
+    var _days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    _days.forEach(function (day) {
+        _class_idx[day] = 0;
+    });
+
+    function addClassItem(day, data) {
+        data = data || {};
+        var idx = _class_idx[day]++;
+        var uid = day + '_' + idx;
+        var urlId = 'wdg_cs_url_' + uid;
+        var nodePopupId = 'wdg_cs_node_' + uid;
+        var filePopupId = 'wdg_cs_file_' + uid;
+        
+        var timeHour = (data.time_hour !== undefined && data.time_hour !== '') ? data.time_hour : '';
+        var timeMin = (data.time_min !== undefined && data.time_min !== '') ? data.time_min : '00';
+        var timeFmt = (data.time_format !== undefined && data.time_format !== '') ? data.time_format : 'AM';
+        
+        var maxH = (timeFmt === '24') ? 23 : 12;
+        var minH = (timeFmt === '24') ? 0 : 1;
+        
+        var $item = $('<div class="wdg-cs-class-item" data-idx="' + idx + '">');
+        
+        // Header with move buttons using pure JS variables (Rule 4 safe)
+        $item.append(
+            '<div class="wdg-cs-class-header">' +
+            '<div class="wdg-cs-move-buttons">' +
+            '<button type="button" class="wdg-cs-move-btn wdg-cs-move-up" title="' + transMoveUp + '">▲</button>' +
+            '<button type="button" class="wdg-cs-move-btn wdg-cs-move-down" title="' + transMoveDown + '">▼</button>' +
+            '</div>' +
+            '<span>' + transClass + ' ' + ($('#wdg_cs_classes_' + day + ' .wdg-cs-class-item').length + 1) + '</span>' +
+            '<button class="wdg-item-remove" type="button" title="' + transRemove + '">✕</button>' +
+            '</div>'
+        );
+        
+        var $body = $('<div class="wdg-cs-class-body">');
+        
+        // Time
+        $body.append(
+            '<div class="ody_builder_parameter"><label>' + transHour + '</label>' +
+            '<div style="display:flex;gap:6px;align-items:center;">' +
+            '<input type="number" class="listbox wdg-cs-time-hour" min="' + minH + '" max="' + maxH + '" step="1" style="max-width:70px;" value="' + escapeHtml(timeHour) + '">' +
+            '<span>:</span>' +
+            '<input type="number" class="listbox wdg-cs-time-min" min="0" max="59" step="1" style="max-width:70px;" value="' + escapeHtml(timeMin) + '">' +
+            '<select class="listbox wdg-cs-time-format" style="max-width:90px !important;">' +
+            '<option value="AM">ΠΜ</option>' +
+            '<option value="PM">ΜΜ</option>' +
+            '<option value="24">24ωρο</option>' +
+            '</select>' +
+            '</div></div>'
+        );
+        
+        // Duration
+        $body.append('<div class="ody_builder_parameter"><label>' + transDuration + '</label>' +
+            '<input type="number" class="listbox wdg-cs-duration" min="1" max="480" step="1" style="max-width:100px;" value="' + escapeHtml(data.duration || '') + '"></div>');
+        
+        // Title
+        $body.append('<div class="ody_builder_parameter"><label>' + transClassTitle + '</label>' +
+            '<input type="text" class="listbox wdg-cs-class-title" value="' + escapeHtml(data.title || '') + '"></div>');
+        
+        // Instructor
+        $body.append('<div class="ody_builder_parameter"><label>' + transInstructor + '</label>' +
+            '<input type="text" class="listbox wdg-cs-instructor" value="' + escapeHtml(data.instructor || '') + '"></div>');
+        
+        // Level
+        $body.append('<div class="ody_builder_parameter"><label>' + transLevel + '</label>' +
+            '<select class="listbox wdg-cs-level" style="max-width: 177px !important;">' + _level_opts + '</select></div>');
+        
+        // Description
+        $body.append('<div class="ody_builder_parameter"><label>' + transDescription + '</label>' +
+            '<textarea class="listbox wdg-cs-description">' + escapeHtml(data.description || '') + '</textarea></div>');
+        
+        // Book label
+        $body.append('<div class="ody_builder_parameter"><label>' + transBtnLabel + '</label>' +
+            '<input type="text" class="listbox wdg-cs-book-label" value="' + escapeHtml(data.book_label || '') + '"></div>');
+        
+        // Book URL + picker
+        $body.append('<div class="ody_builder_parameter"><label>Link</label>' +
+            '<input type="text" id="' + urlId + '" class="listbox wdg-cs-book-url" value="' + escapeHtml(data.book_url || '') + '">' +
+            '<select class="selectLink listbox" onchange="wdgCsSetLink($(this).val(),\'' + urlId + '\',\'' + uid + '\'); $(this).val(\'\');">' +
+            _page_opts + '</select></div>');
+        
+        // New tab checkbox
+        var isNewTab = (data.book_new_tab == '1');
+        $body.append('<div class="ody_builder_parameter"><div class="admin_checkbox_wrapper" style="margin: 0 0 10px;">' +
+            '<input type="checkbox" class="wdg-cs-book-new-tab" value="1" ' + (isNewTab ? 'checked' : '') + '>' +
+            '<p>' + transNewTab + '</p></div></div>');
+        
+        $item.append($body);
+        $('#wdg_cs_classes_' + day).append($item);
+        
+        if(data.level) $item.find('.wdg-cs-level').val(data.level);
+        $item.find('.wdg-cs-time-format').val(timeFmt);
+        updateTimeHourLimits($item);
+        
+        // Live title input sync
+        $item.find('.wdg-cs-class-title').on('input', function() {
+            updateItemHeaderTitle($item, day);
+        });
+        
+        // ── Hidden popups ─────────────────────────────────────────────────────
+        $('#wdg_cs_popups_container').append(
+            '<a id="' + nodePopupId + '" class="builder_popup" data-vbtype="iframe" href="section_links.php?venobox=[id]' + urlId + '" style="display:none;">iFrame</a>' +
+            '<a id="' + filePopupId + '" class="builder_popup" data-vbtype="iframe" href="file_links.php?venobox=[id]' + urlId + '" style="display:none;">iFrame</a>'
+        );
+        new VenoBox({selector: '#' + nodePopupId, fitView: true, ratio: 'full'});
+        new VenoBox({selector: '#' + filePopupId, fitView: true, ratio: 'full'});
+        
+        // ── Remove button ─────────────────────────────────────────────────────
+        $item.find('.wdg-item-remove').on('click', function () {
+            $item.fadeOut(200, function () {
+                $item.remove();
+                renumberDayItems(day);
+            });
+        });
+
+        // ── Move buttons events ───────────────────────────────────────────────
+        $item.find('.wdg-cs-move-up').on('click', function(e) {
+            e.stopPropagation();
+            moveItemUp($item, day);
+        });
+
+        $item.find('.wdg-cs-move-down').on('click', function(e) {
+            e.stopPropagation();
+            moveItemDown($item, day);
+        });
+
+        updateItemHeaderTitle($item, day);
+    }
+    
+    function renumberDayItems(day) {
+        $('#wdg_cs_classes_' + day + ' .wdg-cs-class-item').each(function () {
+            updateItemHeaderTitle($(this), day);
+        });
+    }
+    
+    // ── Φόρτωση αποθηκευμένων δεδομένων ──────────────────────────────────────
+    _days.forEach(function (day) {
+        var day_data = _days_data[day] || {};
+        if(day_data.enabled == '1' || day_data.enabled === true) {
+            $('#wdg_cs_enabled_' + day).prop('checked', true);
+        }
+        var classes = day_data.classes || [];
+        classes.forEach(function (cls) {
+            addClassItem(day, cls);
+        });
+
+        // ⚠️ Αρχικό Load & Renumbering ανά ημέρα
+        renumberDayItems(day);
+    });
+    
+    // ── Add class buttons ─────────────────────────────────────────────────────
+    $('.wdg-cs-add-class-btn').on('click', function () {
+        var day = $(this).data('day');
+        addClassItem(day, {});
+        var $lastItem = $('#wdg_cs_classes_' + day + ' .wdg-cs-class-item').last();
+        if ($lastItem.length) {
+            $('html, body').animate({
+                scrollTop: $lastItem.offset().top - 100
+            }, 300);
+        }
+    });
+    
+    // ── Link picker helper ────────────────────────────────────────────────────
+    window.wdgCsSetLink = function (val, targetId, uid) {
+        if(!val || val === 'divider') return;
+        if(val === 'nodeLinks_cs') {
+            document.getElementById('wdg_cs_node_' + uid).click();
+            return;
+        }
+        if(val === 'fileLinks_cs') {
+            document.getElementById('wdg_cs_file_' + uid).click();
+            return;
+        }
+        var link = (val === 'homepage') ? 'index.php' :
+                '««index.php?section=pages~|||~view=render~|||~id=' + val + '»»';
+        $('#' + targetId).val(link);
+    };
+    
+    // ── Time format change event (delegation) ────────────────────────────────
+    $(document).on('change', '.wdg-cs-time-format', function () {
+        var $item = $(this).closest('.wdg-cs-class-item');
+        updateTimeHourLimits($item);
+    });
+    
+    // ── Label ─────────────────────────────────────────────────────────────────
+    var label = 'Widget Class Schedule';
+    $('#ody_builder_admin_label').val(label);
+    $('.ody_builder_header h2').html('Widgetizer — Class Schedule');
+    
+    // ── get_block_data ────────────────────────────────────────────────────────
+    window.get_block_data = function () {
+        var days = {};
+        _days.forEach(function (day) {
+            var classes = [];
+            $('#wdg_cs_classes_' + day + ' .wdg-cs-class-item').each(function () {
+                var $it = $(this);
+                classes.push({
+                    time_hour:    $it.find('.wdg-cs-time-hour').val(),
+                    time_min:     $it.find('.wdg-cs-time-min').val(),
+                    time_format:  $it.find('.wdg-cs-time-format').val(),
+                    duration:     $it.find('.wdg-cs-duration').val(),
+                    title:        $it.find('.wdg-cs-class-title').val(),
+                    instructor:   $it.find('.wdg-cs-instructor').val(),
+                    level:        $it.find('.wdg-cs-level').val(),
+                    description:  $it.find('.wdg-cs-description').val(),
+                    book_label:   $it.find('.wdg-cs-book-label').val(),
+                    book_url:     $it.find('.wdg-cs-book-url').val(),
+                    book_new_tab: $it.find('.wdg-cs-book-new-tab').is(':checked') ? '1' : '0'
+                });
+            });
+            days[day] = {
+                enabled: $('#wdg_cs_enabled_' + day).is(':checked') ? '1' : '0',
+                classes: classes
+            };
+        });
+        return {
+            widget_id: 'class_schedule',
+            params:    {
+                eyebrow:         $('#wdg_cs_eyebrow').val(),
+                title:           $('#wdg_cs_title').val(),
+                subheading:      $('#wdg_cs_subheading').val(),
+                footer_notes:    $('#wdg_cs_footer_notes').val(),
+                header_align:    $('#wdg_cs_header_align').val(),
+                layout:          $('#wdg_cs_layout').val(),
+                default_day:     $('#wdg_cs_default_day').val(),
+                week_start:      $('#wdg_cs_week_start').val(),
+                color_scheme:    $('#wdg_cs_color_scheme').val(),
+                container_width: $('#wdg_cs_container_width').val(),
+                days:            days
+            }
+        };
+    };
+});
 </script>
